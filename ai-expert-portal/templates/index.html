@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIExpert Portal</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">AIExpert <span class="brand-sub">portal</span></div>
+    <div class="workspace-path" title="{{ workspace_dir }}">{{ workspace_dir }}</div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="playbook">Playbook <span class="count">{{ counts.playbook }}</span></button>
+    <button class="tab-btn" data-tab="recommendations">Recommendations <span class="count">{{ counts.exercises + counts.proposals }}</span></button>
+    <button class="tab-btn" data-tab="findings">Findings <span class="count">{{ counts.ledger }}</span></button>
+    <button class="tab-btn" data-tab="implementations">Implementation log <span class="count">{{ counts.changelog }}</span></button>
+    <button class="tab-btn" data-tab="regression">Regression log <span class="count">{{ counts.regression }}</span></button>
+  </nav>
+</header>
+
+<main>
+
+<section id="tab-playbook" class="tab-panel active">
+  <h2>Playbook</h2>
+  <p class="hint">From <code>knowledge/playbook.md</code> — opinionated, actionable recommendations synthesized from the ledger. This is the priority deliverable, read-only here (edit the file directly to revise a recommendation).</p>
+  {% for e in data.playbook %}
+  <article class="card wide" id="{{ e.id }}">
+    <div class="card-head">
+      <span class="badge confidence-{{ e.confidence }}">{{ e.confidence }}</span>
+      <span class="badge status-{{ e.status }}">{{ e.status }}</span>
+      <h3>{{ e.title }}</h3>
+    </div>
+    {% if e.eli10 %}
+    <div class="eli10-box">
+      <span class="eli10-label">In plain terms</span>
+      <p>{{ e.eli10 | mdinline | safe }}</p>
+    </div>
+    {% endif %}
+    <dl class="fields">
+      {% for k, v in e.fields %}
+        {% if not k.lower().startswith('explain it like') and k.lower() != 'status' %}
+        <dt>{{ k }}</dt><dd>{{ v | mdinline | safe }}</dd>
+        {% endif %}
+      {% endfor %}
+    </dl>
+  </article>
+  {% else %}
+  <p class="empty">No playbook entries yet.</p>
+  {% endfor %}
+</section>
+
+<section id="tab-recommendations" class="tab-panel">
+  <h2>Exercises</h2>
+  <p class="hint">From <code>exercises/backlog.md</code>. Change status here — it writes straight back to that line in the file, nothing else in it is touched.</p>
+  <div class="card-grid">
+    {% for ex in data.exercises %}
+    <article class="card" data-kind="exercise" data-id="{{ ex.id }}" id="{{ ex.id }}">
+      <div class="card-head">
+        <span class="badge status-{{ ex.status }}">{{ ex.status }}</span>
+        <h3>{{ ex.id }} — {{ ex.title }}</h3>
+      </div>
+      <div class="card-status-raw">{{ ex.status_raw }}</div>
+      {% if ex.eli10 %}
+      <div class="eli10-box">
+        <span class="eli10-label">In plain terms</span>
+        <p>{{ ex.eli10 | mdinline | safe }}</p>
+      </div>
+      {% endif %}
+      <dl class="fields">
+        {% for k, v in ex.fields %}
+          {% if not k.lower().startswith('explain it like') and k.lower() not in ['status'] %}
+          <dt>{{ k }}</dt><dd>{{ v | mdinline | safe }}</dd>
+          {% endif %}
+        {% endfor %}
+      </dl>
+      <div class="card-actions">
+        <label>Set status:
+          <select class="status-select">
+            {% for s in exercise_statuses %}
+            <option value="{{ s }}" {% if s == ex.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <span class="save-state"></span>
+      </div>
+    </article>
+    {% else %}
+    <p class="empty">No exercises found in backlog.md.</p>
+    {% endfor %}
+  </div>
+
+  <h2>Proposals</h2>
+  <p class="hint">From <code>proposals/*.md</code> (governing-instruction changes AIExpert has proposed for approval).</p>
+  <div class="card-grid">
+    {% for p in data.proposals %}
+    <article class="card" data-kind="proposal" data-id="{{ p.id }}" id="{{ p.id }}">
+      <div class="card-head">
+        <span class="badge status-{{ p.status }}">{{ p.status }}</span>
+        <h3>{{ p.title }}</h3>
+      </div>
+      <div class="card-status-raw">{{ p.status_raw }}</div>
+      {% if p.eli10 %}
+      <div class="eli10-box">
+        <span class="eli10-label">In plain terms</span>
+        <p>{{ p.eli10 | mdinline | safe }}</p>
+      </div>
+      {% endif %}
+      <dl class="fields">
+        {% for k, v in p.fields %}
+          {% if not k.lower().startswith('explain it like') and k.lower() not in ['status'] %}
+          <dt>{{ k }}</dt><dd>{{ v | mdinline | safe }}</dd>
+          {% endif %}
+        {% endfor %}
+      </dl>
+      {% if p.decision %}
+      <div class="decision"><strong>Decision:</strong> {{ p.decision | mdinline | safe }}</div>
+      {% endif %}
+      {% if p.patch %}
+      <details class="patch"><summary>Proposed patch</summary><pre>{{ p.patch }}</pre></details>
+      {% endif %}
+      <div class="card-actions">
+        <label>Set status:
+          <select class="status-select">
+            {% for s in proposal_statuses %}
+            <option value="{{ s }}" {% if s == p.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <span class="save-state"></span>
+      </div>
+    </article>
+    {% else %}
+    <p class="empty">No proposals found.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="tab-findings" class="tab-panel">
+  <h2>Findings</h2>
+  <p class="hint">From <code>knowledge/ledger.md</code>, most recently added first. Read-only — the ledger is AIExpert's own evidence record.</p>
+  {% for e in data.ledger %}
+  <article class="card wide" id="{{ e.id }}">
+    <div class="card-head">
+      <span class="badge status-{{ e.status }}">{{ e.status }}</span>
+      <h3>{{ e.title }}</h3>
+    </div>
+    {% if e.eli10 %}
+    <div class="eli10-box">
+      <span class="eli10-label">In plain terms</span>
+      <p>{{ e.eli10 | mdinline | safe }}</p>
+    </div>
+    {% endif %}
+    <dl class="fields">
+      {% for k, v in e.fields %}
+        {% if not k.lower().startswith('explain it like') %}
+        <dt>{{ k }}</dt><dd>{{ v | mdinline | safe }}</dd>
+        {% endif %}
+      {% endfor %}
+    </dl>
+  </article>
+  {% else %}
+  <p class="empty">No ledger entries found.</p>
+  {% endfor %}
+</section>
+
+<section id="tab-implementations" class="tab-panel">
+  <h2>Implementation log</h2>
+  <p class="hint">From <code>knowledge/changelog.md</code> — approved changes to AIExpert's own instructions, schemas, tools, or evaluation suite. This is the record of what actually got implemented, not just recommended.</p>
+  {% for c in data.changelog %}
+  <article class="card wide" id="{{ c.id }}">
+    <div class="card-head"><h3>{{ c.title }}</h3></div>
+    <div class="md-body">{{ c.body_html | safe }}</div>
+  </article>
+  {% else %}
+  <p class="empty">No changelog entries found.</p>
+  {% endfor %}
+</section>
+
+<section id="tab-regression" class="tab-panel">
+  <h2>Regression log</h2>
+  <p class="hint">From <code>references/regression-log.md</code> — every run of the five-prompt evaluation suite, dated, compared against the most recent prior run.</p>
+  {% for r in data.regression %}
+  <article class="card wide" id="{{ r.id }}">
+    <div class="card-head"><h3>{{ r.title }}</h3></div>
+    <div class="md-body">{{ r.body_html | safe }}</div>
+  </article>
+  {% else %}
+  <p class="empty">No regression log entries found.</p>
+  {% endfor %}
+</section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
