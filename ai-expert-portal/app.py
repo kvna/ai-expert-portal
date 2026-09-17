@@ -25,6 +25,8 @@ PROPOSALS_DIR = WORKSPACE_DIR / "proposals"
 app = Flask(__name__)
 app.jinja_env.filters["mdinline"] = parser.render_md_inline
 
+READ_ONLY = os.environ.get("PORTAL_READ_ONLY") == "1"
+
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
@@ -71,6 +73,7 @@ def index():
         exercise_statuses=parser.EXERCISE_STATUSES,
         proposal_statuses=parser.PROPOSAL_STATUSES,
         workspace_dir=str(WORKSPACE_DIR),
+        read_only=READ_ONLY,
     )
 
 

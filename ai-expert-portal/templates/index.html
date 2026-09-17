@@ -98,6 +98,7 @@
           {% endif %}
         {% endfor %}
       </dl>
+      {% if not read_only %}
       <div class="card-actions">
         <label>Set status:
           <select class="status-select">
@@ -108,6 +109,7 @@
         </label>
         <span class="save-state"></span>
       </div>
+      {% endif %}
     </article>
     {% else %}
     <p class="empty">No exercises found in backlog.md.</p>
@@ -143,6 +145,7 @@
       {% if p.patch %}
       <details class="patch"><summary>Proposed patch</summary><pre>{{ p.patch }}</pre></details>
       {% endif %}
+      {% if not read_only %}
       <div class="card-actions">
         <label>Set status:
           <select class="status-select">
@@ -153,6 +156,7 @@
         </label>
         <span class="save-state"></span>
       </div>
+      {% endif %}
     </article>
     {% else %}
     <p class="empty">No proposals found.</p>

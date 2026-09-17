@@ -1,0 +1,8 @@
+{
+  "mimeTypes": {
+    ".md": "text/html"
+  },
+  "globalHeaders": {
+    "Cache-Control": "no-cache"
+  }
+}
