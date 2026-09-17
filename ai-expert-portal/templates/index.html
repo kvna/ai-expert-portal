@@ -186,6 +186,12 @@
         {% endif %}
       {% endfor %}
     </dl>
+    {% if e.summary_html %}
+    <div class="summary-box">
+      <span class="summary-label">Summary of sources</span>
+      <div class="summary-body">{{ e.summary_html | safe }}</div>
+    </div>
+    {% endif %}
   </article>
   {% else %}
   <p class="empty">No ledger entries found.</p>

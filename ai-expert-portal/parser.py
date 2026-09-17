@@ -68,9 +68,12 @@ def rewrite_internal_links(text: str, base_dir: str) -> str:
     base_dir is the directory the source file lives in relative to the
     workspace root (e.g. "knowledge", "exercises"), needed to resolve a
     relative target like "../knowledge/ledger.md" correctly. A link to a file
-    that has its own portal tab jumps to that tab (`#tab-<name>`); anything
-    else (EX-001-results.md, evaluation.md, TEMPLATE.md, ...) is routed
-    through /raw/<path>.html (note: .html, not .md -- see raw_url_for_md()).
+    that has its own portal tab jumps straight to the specific entry
+    (`#<entry-slug>`) if the link already carries a `#fragment` (e.g.
+    `ledger.md#openai-agents-api`), or to the tab in general (`#tab-<name>`)
+    if it doesn't. Anything else (EX-001-results.md, evaluation.md,
+    TEMPLATE.md, ...) is routed through /raw/<path>.html (note: .html, not
+    .md -- see raw_url_for_md()).
     """
     if not text:
         return text
@@ -79,11 +82,14 @@ def rewrite_internal_links(text: str, base_dir: str) -> str:
         prefix, target, suffix = m.group(1), m.group(2), m.group(3)
         if target.startswith(("http://", "https://", "#", "mailto:")):
             return m.group(0)
-        basename = target.split("/")[-1]
+        target_path, _sep, fragment = target.partition("#")
+        basename = target_path.split("/")[-1]
         if basename in _TAB_FOR_FILE:
-            return f"{prefix}#tab-{_TAB_FOR_FILE[basename]}{suffix}"
-        resolved = os.path.normpath(os.path.join(base_dir, target)).replace(os.sep, "/")
-        return f"{prefix}{raw_url_for_md(resolved)}{suffix}"
+            anchor = fragment if fragment else f"tab-{_TAB_FOR_FILE[basename]}"
+            return f"{prefix}#{anchor}{suffix}"
+        resolved = os.path.normpath(os.path.join(base_dir, target_path)).replace(os.sep, "/")
+        frag_suffix = f"#{fragment}" if fragment else ""
+        return f"{prefix}{raw_url_for_md(resolved)}{frag_suffix}{suffix}"
 
     return _MD_LINK_TARGET_RE.sub(repl, text)
 
@@ -254,8 +260,10 @@ def parse_ledger(text: str):
     _preamble, sections = split_sections(text)
     entries = []
     for header, body in sections:
-        fields = rewrite_fields(parse_bullet_fields(body), "knowledge")
+        main_body, subsections = split_subsections(body)
+        fields = rewrite_fields(parse_bullet_fields(main_body), "knowledge")
         raw_status = get_field(fields, "Status")
+        summary = subsections.get("Summary", "")
         entries.append({
             "id": ledger_entry_slug(header),
             "title": header,
@@ -264,6 +272,7 @@ def parse_ledger(text: str):
             "status_raw": raw_status,
             "status": status_keyword(raw_status) or "unknown",
             "linked": get_field_startswith(fields, "Linked exercises"),
+            "summary_html": render_md(rewrite_internal_links(summary, "knowledge")) if summary else "",
         })
     return list(reversed(entries))  # most recently added first
 
