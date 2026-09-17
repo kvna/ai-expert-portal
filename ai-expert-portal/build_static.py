@@ -21,7 +21,7 @@ PORTAL_DIR = Path(__file__).resolve().parent
 OUT_DIR = PORTAL_DIR / "dist"
 
 # Workspace files already rendered as their own tab don't need a /raw/ copy.
-_TAB_FILES = {"ledger.md", "playbook.md", "changelog.md", "backlog.md", "regression-log.md"}
+_TAB_FILES = {"ledger.md", "playbook.md", "changelog.md", "backlog.md", "regression-log.md", "agents-guide.md"}
 
 
 def _write(path: Path, content: bytes) -> None:

@@ -20,6 +20,7 @@ LEDGER_PATH = WORKSPACE_DIR / "knowledge" / "ledger.md"
 BACKLOG_PATH = WORKSPACE_DIR / "exercises" / "backlog.md"
 CHANGELOG_PATH = WORKSPACE_DIR / "knowledge" / "changelog.md"
 REGRESSION_LOG_PATH = WORKSPACE_DIR / "references" / "regression-log.md"
+AGENTS_GUIDE_PATH = WORKSPACE_DIR / "knowledge" / "agents-guide.md"
 PROPOSALS_DIR = WORKSPACE_DIR / "proposals"
 
 app = Flask(__name__)
@@ -53,6 +54,7 @@ def load_all():
         "proposals": load_proposals(),
         "changelog": parser.parse_changelog(_read(CHANGELOG_PATH)),
         "regression": parser.parse_regression_log(_read(REGRESSION_LOG_PATH)),
+        "guide": parser.parse_agents_guide(_read(AGENTS_GUIDE_PATH)),
     }
 
 

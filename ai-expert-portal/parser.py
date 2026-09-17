@@ -55,6 +55,7 @@ _TAB_FOR_FILE = {
     "changelog.md": "implementations",
     "backlog.md": "recommendations",
     "regression-log.md": "regression",
+    "agents-guide.md": "guide",
 }
 
 _MD_LINK_TARGET_RE = re.compile(r"(\]\()([^)]+)(\))")
@@ -522,3 +523,18 @@ def parse_regression_log(text: str):
             "body_html": render_md(rewrite_internal_links(body, "references")),
         })
     return list(reversed(entries))
+
+
+# ---------------------------------------------------------------------------
+# Agents guide (single flowing page, not a dated/status entry log)
+# ---------------------------------------------------------------------------
+
+def parse_agents_guide(text: str):
+    """Parses agents-guide.md, which -- unlike every other workspace file this
+    module parses -- isn't split into dated or status-bearing entries. Per the
+    file's own header comment, the whole body after the H1 title is one piece
+    of continuous prose, so this strips the schema-documentation HTML comment
+    and the title line, then renders the rest as a single markdown block."""
+    body = _HTML_COMMENT_RE.sub("", text)
+    body = re.sub(r"^#[^\n]*\n", "", body, count=1)
+    return {"body_html": render_md(rewrite_internal_links(body, "knowledge"))}

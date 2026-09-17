@@ -13,6 +13,7 @@
     <a class="download-link" href="/agent-best-practices.md" download title="Download the current playbook as a standalone instruction set, e.g. to import into a project's CLAUDE.md">⬇ Agent best practices (.md)</a>
   </div>
   <nav class="tabs">
+    <button class="tab-btn" data-tab="guide">Guide</button>
     <button class="tab-btn active" data-tab="playbook">Playbook <span class="count">{{ counts.playbook }}</span></button>
     <button class="tab-btn" data-tab="recommendations">Recommendations <span class="count">{{ counts.exercises + counts.proposals }}</span></button>
     <button class="tab-btn" data-tab="findings">Findings <span class="count">{{ counts.ledger }}</span></button>
@@ -22,6 +23,12 @@
 </header>
 
 <main>
+
+<section id="tab-guide" class="tab-panel">
+  <h2>AI agents: a beginner's guide</h2>
+  <p class="hint">From <code>knowledge/agents-guide.md</code>. Start here if you're new to agents — everything else on this site assumes you've read this.</p>
+  <div class="md-body">{{ data.guide.body_html | safe }}</div>
+</section>
 
 <section id="tab-playbook" class="tab-panel active">
   <h2>Playbook</h2>
