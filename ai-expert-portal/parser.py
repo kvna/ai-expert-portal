@@ -274,6 +274,77 @@ def parse_playbook(text: str):
     return entries
 
 
+def generate_agent_best_practices(text: str, portal_url: str = "") -> str:
+    """Renders the active playbook entries into a standalone markdown file --
+    an importable instruction set for designing agents elsewhere (in a
+    project's CLAUDE.md, or any other agent-building context), independent
+    of this portal.
+
+    Deliberately NOT the same parse as parse_playbook(): this uses raw field
+    text with no portal-specific link rewriting (a #tab-findings anchor
+    means nothing outside this site), keeps only the fields useful for
+    *applying* a recommendation (Recommendation, Why, Bad/Good example) and
+    drops the ones that are about *researching* it (Evidence, References,
+    Summary, Explain it like I'm 10) -- those stay one click away via the
+    link back to the full entry. Superseded/non-active entries are excluded;
+    stale advice has no place in an instruction set someone will load as-is.
+    """
+    _preamble, sections = split_sections(text)
+    by_category = {}
+    order = []
+    for header, body in sections:
+        main_body, subsections = split_subsections(body)
+        fields = parse_bullet_fields(main_body)
+        if status_keyword(get_field(fields, "Status")) != "active":
+            continue
+        category = get_field(fields, "Category", "Uncategorized")
+        if category not in by_category:
+            by_category[category] = []
+            order.append(category)
+        by_category[category].append({
+            "id": playbook_entry_slug(header),
+            "title": header,
+            "confidence": get_field(fields, "Confidence"),
+            "recommendation": get_field(fields, "Recommendation"),
+            "why": get_field(fields, "Why"),
+            "bad_example": subsections.get("Bad example", ""),
+            "good_example": subsections.get("Good example", ""),
+        })
+
+    lines = [
+        "# Agent Building Best Practices",
+        "",
+        "Evidence-backed recommendations for designing, instructing, and running AI "
+        "agents, auto-generated from the AIExpert playbook. Read this before writing "
+        "a new agent's instructions.",
+        "",
+    ]
+    if portal_url:
+        lines += [f"Full evidence, sources, and context: {portal_url}", ""]
+    lines += ["---", ""]
+
+    for category in order:
+        lines += [f"## {category}", ""]
+        for e in by_category[category]:
+            title = e["title"].split("—", 1)[-1].strip() or e["title"]
+            lines += [f"### {title}", ""]
+            if e["confidence"]:
+                lines += [f"*Confidence: {e['confidence']}*", ""]
+            if e["recommendation"]:
+                lines += [e["recommendation"], ""]
+            if e["why"]:
+                lines += [f"**Why:** {e['why']}", ""]
+            if e["bad_example"]:
+                lines += ["**Bad example:**", "", e["bad_example"], ""]
+            if e["good_example"]:
+                lines += ["**Good example:**", "", e["good_example"], ""]
+            if portal_url:
+                lines += [f"[Full entry, evidence, and sources]({portal_url}#{e['id']})", ""]
+            lines += ["---", ""]
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Backlog / exercises
 # ---------------------------------------------------------------------------

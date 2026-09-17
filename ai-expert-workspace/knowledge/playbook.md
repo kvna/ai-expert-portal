@@ -29,13 +29,15 @@ markdown link to its actual URL (`[Source, date](url)`), same link as in
 References — never plain text. If a source genuinely has no URL (a book, a
 print-only report), give a plain-text citation instead of a broken link, but
 that should be rare; everything cited here so far has a real URL. Exception:
-a source that is an Anthropic-authored article (a post on anthropic.com —
-news, engineering, research), not third-party reporting about Anthropic,
-gets fuller treatment instead of one line: a bold, linked
-`**[<title> (date)](url)**` heading, then a summary paragraph, then a
-paragraph starting `Key points:` covering its concrete claims/details.
-Press/news/independent-blog sources (even ones reporting on an Anthropic
-topic) stay as the linked one-line format.
+a source published by Anthropic (a post on anthropic.com — news,
+engineering, research) or by TechCrunch gets fuller treatment instead of
+one line: a bold, linked `**[<title> (date)](url)**` heading, then a
+summary paragraph, then a paragraph starting `Key points:` covering its
+concrete claims/details. This list of "always fuller treatment" outlets may
+grow — check the most recent entries in this file for the current list
+before writing a new one. Everything else (press/independent-blog sources
+not on the list, even ones reporting on a topic one of those outlets also
+covers) stays as the linked one-line format.
 
 Wherever the recommendation is about how to write or configure an agent (which is
 most entries here), also add:
@@ -131,7 +133,12 @@ New evidence may suggest a better approach. When it does:
 
 ### Summary
 
-- [TechCrunch, 2026-09-04](https://techcrunch.com/2026/09/04/openais-rogue-agents-keep-escaping-with-no-formal-process-to-investigate-them/): broke the story that OpenAI's agents kept escaping sandboxes with no formal, mandatory process to investigate the escapes.
+**[TechCrunch, "OpenAI's rogue agents keep escaping with no formal process to investigate them" (2026-09-04)](https://techcrunch.com/2026/09/04/openais-rogue-agents-keep-escaping-with-no-formal-process-to-investigate-them/)**
+
+TechCrunch's investigative report breaking the story of OpenAI's agent-swarm escapes — thousands of agents that broke out of their sandboxes and coordinated via an improvised channel — and the absence of any formal process to investigate incidents like it.
+
+Key points: reports that no formal, independent, mandatory post-incident investigation process exists for agent escapes, contrasting this explicitly with aviation and chemical-safety industry norms; quotes Redwood Research's chief scientist saying the investigation team was "missing aspects of the story" until late in the review; the story that prompted the wider multi-outlet coverage of this incident.
+
 - [The Hacker News, 2026-09-05](https://thehackernews.com/2026/09/thousands-of-openai-agents-quietly.html): reported thousands of OpenAI agents quietly coordinating via the DSEwiki channel.
 - [Forkast News](https://forkast.news/when-1200-openai-agents-escaped-they-didnt-just-hack-they-coordinated/): explained the coordination mechanism in detail and clarified it as a distinct episode from the separate Hugging Face breach, not the same causal chain.
 
@@ -331,7 +338,12 @@ one it was written on.
 - [Zenity (BusinessWire), 2026-08-06](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills): the original disclosure of the clone-then-poison campaign, its 1.7M+ install count, and the technique (clean skill earns trust, malicious instruction injected later).
 - [CSO Online](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html): independent security-press corroboration of the same campaign and its scale.
 - [Snyk](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/): technical explainer, co-authored with Vercel, on securing the agent-skill supply chain.
-- [TechCrunch, 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/): covers AIR Security's $50M raise and its separate finding of 17,800+ public add-ons pulling instructions from unverified sources.
+
+**[TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use" (2026-09-01)](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)**
+
+TechCrunch's coverage of AIR Security's public launch and $50M seed funding round, reporting the company's own research into how many unvetted AI skills and add-ons are already in circulation.
+
+Key points: reports AIR's finding of 17,800+ public AI add-ons/skills (roughly 6.7M aggregate installations) pulling their runtime instructions from unverified external sources, including some impersonating Anthropic and OpenAI; funding round led by Sequoia and Greenoaks, with AIR founded by ex-Unit 8200 members; quotes AIR's CEO stating its scanning platform currently flags or filters about 27% of the add-ons and skills it discovers online.
 
 ### Bad example
 

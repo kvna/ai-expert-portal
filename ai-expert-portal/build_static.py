@@ -12,8 +12,9 @@ import shutil
 from pathlib import Path
 
 os.environ["PORTAL_READ_ONLY"] = "1"
+os.environ.setdefault("PORTAL_PUBLIC_URL", "https://ashy-pebble-0b4d0eb03.2.azurestaticapps.net")
 
-import app as portal_app  # noqa: E402  (must follow the env var above)
+import app as portal_app  # noqa: E402  (must follow the env vars above)
 
 PORTAL_DIR = Path(__file__).resolve().parent
 OUT_DIR = PORTAL_DIR / "dist"
@@ -42,6 +43,12 @@ def main() -> None:
 
     shutil.copytree(PORTAL_DIR / "static", OUT_DIR / "static")
     print("copied static/ assets")
+
+    res = client.get("/agent-best-practices.md")
+    if res.status_code != 200:
+        raise SystemExit(f"agent-best-practices.md build failed: HTTP {res.status_code}")
+    _write(OUT_DIR / "agent-best-practices.md", res.data)
+    print(f"wrote agent-best-practices.md ({len(res.data)} bytes)")
 
     # Tells Azure Static Web Apps to serve the pre-rendered /raw/*.md pages as
     # text/html -- they're rendered HTML content, just named .md because the

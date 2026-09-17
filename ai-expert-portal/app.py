@@ -26,6 +26,7 @@ app = Flask(__name__)
 app.jinja_env.filters["mdinline"] = parser.render_md_inline
 
 READ_ONLY = os.environ.get("PORTAL_READ_ONLY") == "1"
+PUBLIC_URL = os.environ.get("PORTAL_PUBLIC_URL", "").rstrip("/")
 
 
 def _read(path: Path) -> str:
@@ -94,6 +95,19 @@ def raw_workspace_file(relpath):
     if not target.is_file():
         abort(404)
     return Response(parser.render_md(target.read_text(encoding="utf-8")), mimetype="text/html")
+
+
+@app.route("/agent-best-practices.md")
+def agent_best_practices():
+    """Downloadable, standalone instruction set distilled from the active playbook
+    entries -- meant to be imported into a project's CLAUDE.md or handed to any
+    other agent-building context, independent of this portal."""
+    content = parser.generate_agent_best_practices(_read(PLAYBOOK_PATH), portal_url=PUBLIC_URL)
+    return Response(
+        content,
+        mimetype="text/markdown",
+        headers={"Content-Disposition": "attachment; filename=agent-best-practices.md"},
+    )
 
 
 @app.route("/api/exercise/<exercise_id>/status", methods=["POST"])
