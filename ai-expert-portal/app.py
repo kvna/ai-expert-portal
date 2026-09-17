@@ -84,9 +84,14 @@ def raw_workspace_file(relpath):
     tab (EX-001-results.md, evaluation.md, TEMPLATE.md, ...), so links to it from
     other files resolve to real content instead of a dead path. Read-only, and
     restricted to files inside WORKSPACE_DIR -- resolves the path and rejects
-    anything that escapes it (blocks `../../` traversal), and only serves .md."""
-    if not relpath.endswith(".md"):
+    anything that escapes it (blocks `../../` traversal).
+
+    URL ends in .html (see parser.raw_url_for_md) even though the source file
+    on disk ends in .md -- a real .html extension gets text/html by default
+    from a static host, no Content-Type override needed."""
+    if not relpath.endswith(".html"):
         abort(404)
+    relpath = parser.raw_source_for_url(relpath)
     target = (WORKSPACE_DIR / relpath).resolve()
     try:
         target.relative_to(WORKSPACE_DIR)

@@ -15,6 +15,7 @@ os.environ["PORTAL_READ_ONLY"] = "1"
 os.environ.setdefault("PORTAL_PUBLIC_URL", "https://ashy-pebble-0b4d0eb03.2.azurestaticapps.net")
 
 import app as portal_app  # noqa: E402  (must follow the env vars above)
+import parser  # noqa: E402
 
 PORTAL_DIR = Path(__file__).resolve().parent
 OUT_DIR = PORTAL_DIR / "dist"
@@ -50,27 +51,25 @@ def main() -> None:
     _write(OUT_DIR / "agent-best-practices.md", res.data)
     print(f"wrote agent-best-practices.md ({len(res.data)} bytes)")
 
-    # Tells Azure Static Web Apps to serve the pre-rendered /raw/*.md pages as
-    # text/html -- they're rendered HTML content, just named .md because the
-    # dynamic Flask route (which sets the content type explicitly) uses the
-    # same path scheme. A generic static host would otherwise serve them by
-    # file extension and send text/markdown, so the browser wouldn't render
-    # them.
     shutil.copy(PORTAL_DIR / "staticwebapp.config.json", OUT_DIR / "staticwebapp.config.json")
     print("copied staticwebapp.config.json")
 
+    # Requested at their .html URL (parser.raw_url_for_md) even though the
+    # source file on disk is .md -- see that function's docstring for why.
     workspace_dir = portal_app.WORKSPACE_DIR
     raw_count = 0
     for md_path in sorted(workspace_dir.rglob("*.md")):
         if md_path.name in _TAB_FILES:
             continue
         rel = md_path.relative_to(workspace_dir).as_posix()
-        res = client.get(f"/raw/{rel}")
+        raw_url = parser.raw_url_for_md(rel)
+        res = client.get(raw_url)
         if res.status_code == 200:
-            _write(OUT_DIR / "raw" / rel, res.data)
+            out_rel = raw_url[len("/raw/"):]
+            _write(OUT_DIR / "raw" / out_rel, res.data)
             raw_count += 1
         else:
-            print(f"warning: /raw/{rel} returned HTTP {res.status_code}, skipped")
+            print(f"warning: {raw_url} returned HTTP {res.status_code}, skipped")
     print(f"wrote {raw_count} /raw/ page(s)")
 
     print(f"Static build complete: {OUT_DIR}")

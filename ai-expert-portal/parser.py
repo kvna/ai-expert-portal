@@ -70,7 +70,7 @@ def rewrite_internal_links(text: str, base_dir: str) -> str:
     relative target like "../knowledge/ledger.md" correctly. A link to a file
     that has its own portal tab jumps to that tab (`#tab-<name>`); anything
     else (EX-001-results.md, evaluation.md, TEMPLATE.md, ...) is routed
-    through /raw/ so it at least resolves to real content instead of nothing.
+    through /raw/<path>.html (note: .html, not .md -- see raw_url_for_md()).
     """
     if not text:
         return text
@@ -83,9 +83,30 @@ def rewrite_internal_links(text: str, base_dir: str) -> str:
         if basename in _TAB_FOR_FILE:
             return f"{prefix}#tab-{_TAB_FOR_FILE[basename]}{suffix}"
         resolved = os.path.normpath(os.path.join(base_dir, target)).replace(os.sep, "/")
-        return f"{prefix}/raw/{resolved}{suffix}"
+        return f"{prefix}{raw_url_for_md(resolved)}{suffix}"
 
     return _MD_LINK_TARGET_RE.sub(repl, text)
+
+
+def raw_url_for_md(relpath_md: str) -> str:
+    """/raw/<relpath, .md replaced with .html>. Azure Static Web Apps' production
+    edge (unlike its own CLI emulator) won't let a route's custom headers override
+    Content-Type -- only the extension-keyed mimeTypes map does that, and it can't
+    distinguish two different .md files that need two different content types
+    (this HTML content vs. the genuinely-markdown agent-best-practices.md
+    download). Serving these as .html sidesteps the conflict entirely: a real
+    .html extension gets text/html by default, no override needed."""
+    if relpath_md.endswith(".md"):
+        relpath_md = relpath_md[: -len(".md")] + ".html"
+    return f"/raw/{relpath_md}"
+
+
+def raw_source_for_url(relpath_html: str) -> str:
+    """Inverse of raw_url_for_md's extension swap, for the /raw/ route handler to
+    find the actual .md source file on disk from the .html URL it was served at."""
+    if relpath_html.endswith(".html"):
+        return relpath_html[: -len(".html")] + ".md"
+    return relpath_html
 
 
 def rewrite_fields(fields, base_dir: str):
