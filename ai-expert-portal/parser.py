@@ -95,6 +95,9 @@ def rewrite_fields(fields, base_dir: str):
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
 
+_FENCE_RE = re.compile(r"^\s*(```+|~~~+)")
+
+
 def split_sections(text: str, marker: str = "## "):
     """Split a markdown file into (header_line, body_text) pairs on a heading marker.
 
@@ -103,6 +106,10 @@ def split_sections(text: str, marker: str = "## "):
     are stripped first, since schema-documentation comments in these files
     contain an example heading line that would otherwise be parsed as a
     spurious first section.
+
+    Fence-aware: a marker-looking line inside a ``` or ~~~ fenced code block
+    (e.g. an example agent instruction file's own "## Section" heading) is
+    never treated as a real section boundary.
     """
     text = _HTML_COMMENT_RE.sub("", text)
     lines = text.split("\n")
@@ -110,8 +117,11 @@ def split_sections(text: str, marker: str = "## "):
     preamble_lines = []
     current_header = None
     current_body = []
+    in_fence = False
     for line in lines:
-        if line.startswith(marker):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+        if not in_fence and line.startswith(marker):
             if current_header is not None:
                 sections.append((current_header, "\n".join(current_body).strip("\n")))
             elif preamble_lines is not None:
@@ -128,6 +138,42 @@ def split_sections(text: str, marker: str = "## "):
         sections.append((current_header, "\n".join(current_body).strip("\n")))
     preamble = "\n".join(preamble_lines) if preamble_lines is not None else ""
     return preamble, sections
+
+
+def split_subsections(body: str, marker: str = "### "):
+    """Split an entry body into (bullet_field_portion, {subsection_name: content}).
+
+    Playbook entries can carry ### -level subsections (Bad example / Good
+    example) after the bullet fields. "### " is a safe marker to nest inside
+    a "## "-delimited entry -- split_sections' marker check is a literal
+    prefix match, and "### " does not start with "## " (the third character
+    differs), so it never gets mistaken for a new top-level entry boundary.
+
+    Fence-aware for the same reason split_sections is: an example snippet's
+    own "### "-or-deeper heading (or a stray "```" line) inside a fenced
+    code block must not be treated as a real subsection boundary.
+    """
+    lines = body.split("\n")
+    main_lines = []
+    subsections = {}
+    current_name = None
+    current_lines = []
+    in_fence = False
+    for line in lines:
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+        if not in_fence and line.startswith(marker):
+            if current_name is not None:
+                subsections[current_name] = "\n".join(current_lines).strip("\n")
+            current_name = line[len(marker):].strip()
+            current_lines = []
+        elif current_name is not None:
+            current_lines.append(line)
+        else:
+            main_lines.append(line)
+    if current_name is not None:
+        subsections[current_name] = "\n".join(current_lines).strip("\n")
+    return "\n".join(main_lines), subsections
 
 
 _FIELD_RE = re.compile(r"^- ([^:]+):\s?(.*)$")
@@ -209,7 +255,11 @@ def parse_playbook(text: str):
     _preamble, sections = split_sections(text)
     entries = []
     for header, body in sections:
-        fields = rewrite_fields(parse_bullet_fields(body), "knowledge")
+        main_body, subsections = split_subsections(body)
+        fields = rewrite_fields(parse_bullet_fields(main_body), "knowledge")
+        summary = subsections.get("Summary", "")
+        bad_example = subsections.get("Bad example", "")
+        good_example = subsections.get("Good example", "")
         entries.append({
             "id": playbook_entry_slug(header),
             "title": header,
@@ -217,6 +267,9 @@ def parse_playbook(text: str):
             "eli10": get_field_startswith(fields, "Explain it like"),
             "confidence": status_keyword(get_field(fields, "Confidence")) or "unknown",
             "status": status_keyword(get_field(fields, "Status")) or "active",
+            "summary_html": render_md(rewrite_internal_links(summary, "knowledge")) if summary else "",
+            "bad_example_html": render_md(rewrite_internal_links(bad_example, "knowledge")) if bad_example else "",
+            "good_example_html": render_md(rewrite_internal_links(good_example, "knowledge")) if good_example else "",
         })
     return entries
 

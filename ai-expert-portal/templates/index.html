@@ -46,6 +46,28 @@
         {% endif %}
       {% endfor %}
     </dl>
+    {% if e.summary_html %}
+    <div class="summary-box">
+      <span class="summary-label">Summary of references</span>
+      <div class="summary-body">{{ e.summary_html | safe }}</div>
+    </div>
+    {% endif %}
+    {% if e.bad_example_html or e.good_example_html %}
+    <div class="example-grid">
+      {% if e.bad_example_html %}
+      <div class="example-box bad-example">
+        <span class="example-label">✗ Bad example</span>
+        <div class="example-body">{{ e.bad_example_html | safe }}</div>
+      </div>
+      {% endif %}
+      {% if e.good_example_html %}
+      <div class="example-box good-example">
+        <span class="example-label">✓ Good example</span>
+        <div class="example-body">{{ e.good_example_html | safe }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
   </article>
   {% else %}
   <p class="empty">No playbook entries yet.</p>
