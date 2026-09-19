@@ -468,3 +468,102 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## self-reported-metrics-are-not-independent-verification — When researching or reporting a vendor's claim about its own AI's capability or performance, always label it as a vendor claim — even when the vendor's methodology looks rigorous, and even when many outlets repeat it
+
+- Explain it like I'm 10: Imagine a student says "I graded my own exam using a really detailed rubric, and I got an A." The rubric can be great and the grading can be careful, and it's still not the same thing as an independent teacher grading it — because the student has a reason to want a good grade, even if they're being honest. A company measuring how good its own AI is at building AI is in the same spot: even with a careful method borrowed from an outside expert, and even if a hundred news sites repeat the number, it's still the company grading itself until someone outside checks the work.
+- Category: Research standard / vendor evaluation
+- Confidence: opinion (AIExpert's own synthesis — the underlying incident is a single vendor disclosure; the general principle it illustrates is already established practice in this workspace's own research standard, just not previously written up as a standalone playbook rule)
+- Recommendation: Treat a lab's self-measured capability or automation statistic as a vendor claim, full stop — regardless of how methodologically transparent it is, how many independent-sounding tools it borrows (e.g., an external framework), or how many outlets repeat the same number. Before promoting such a figure to "fact" status anywhere in this workspace, check specifically whether (a) the entity gathering the underlying data, (b) the entity judging/scoring it, and (c) the entity publishing the result are all the same company or the same model family — if so, note that explicitly, and actively search for a source that re-measured or audited the claim independently rather than one that just repeated it. Wide press repetition of a number is not the same as independent verification of that number; distinguish "many outlets cite this" from "multiple outlets independently verified this."
+- Why: Anthropic's September 2026 "R&D Automation Index" (Claude leads 26% of Anthropic's own R&D, up from <1% in February) used an external scale (Epoch AI's Automation Level framework) to look rigorous — but Anthropic's own Claude models both gathered the underlying task sample and judged the automation level per task, and Anthropic itself acknowledged this can introduce correlated errors. Dozens of outlets repeated the headline number, but nearly all trace back to the single original Anthropic post; only one source found (The Neuron) offered actual independent critique, noting the self-report/self-judge conflict and citing the Council on Foreign Relations' point that voluntary disclosure, however detailed, is not the same as independent oversight. This is the same structural gap this workspace already flagged in `instructions-are-not-controls`: a claim stated confidently, even in a well-formatted document, is not automatically a verified control or fact.
+- Evidence: [Ledger: anthropic-rd-automation-index](ledger.md)
+- References: [Anthropic Institute, "Measurements for understanding the pace of AI development inside frontier labs," 2026-09-18](https://www.anthropic.com/institute/measuring-pace-of-ai-development), [The Neuron, "Anthropic's Claude Leads 26% of AI R&D — But Who Sets the Metric?"](https://www.theneuron.ai/news/anthropic-claude-leads-26-percent-ai-research-metric/), [Qz, "Anthropic says Claude leads 26% of its AI R&D work"](https://qz.com/anthropic-claude-ai-research-development-automation-091826)
+- Last updated: 2026-09-19
+- Status: active
+
+### Summary
+
+**[Anthropic Institute, "Measurements for understanding the pace of AI development inside frontier labs" (2026-09-18)](https://www.anthropic.com/institute/measuring-pace-of-ai-development)**
+
+Anthropic's own primary post introducing the R&D Automation Index and the 26% "leads" figure — the vendor claim this entry is about how to treat.
+
+Key points: uses Epoch AI's external Automation Level scale, but Anthropic's own Claude models both sampled the underlying task data and judged automation level per task; Anthropic states Claude is not fully autonomous in any measured category, which is itself a data point worth taking at face value since it cuts against the vendor's own incentive to overstate capability.
+
+- [The Neuron, "Anthropic's Claude Leads 26% of AI R&D — But Who Sets the Metric?"](https://www.theneuron.ai/news/anthropic-claude-leads-26-percent-ai-research-metric/): the one source in this workspace's search that supplied actual independent critique rather than repetition — names the self-report/self-judge conflict directly and brings in the Council on Foreign Relations' "visibility is not enforcement" framing.
+- [Qz, "Anthropic says Claude leads 26% of its AI R&D work"](https://qz.com/anthropic-claude-ai-research-development-automation-091826): representative of the many outlets that repeated the headline figure and the AL0–AL5 scale definitions without independently re-measuring them.
+
+### Bad example
+
+```markdown
+## Research standard
+
+If a major AI lab publishes a statistic about how capable or automated
+its systems are, cite it as a known fact in your report — it's their
+own data, so they'd know best.
+```
+
+Collapses "the vendor measured this" into "this is independently true," and gives no
+instruction to check who gathered, judged, and published the number.
+
+### Good example
+
+```markdown
+## Research standard
+
+When a lab reports a statistic about its own AI's capability or
+automation level, label it a vendor claim regardless of how rigorous
+the methodology looks. Check whether the same company (or the same
+model family) gathered the data, judged it, and published it — if so,
+say so explicitly. Search for independent critique or re-measurement,
+not just repetition, before treating the figure as verified. Multiple
+outlets citing the same number is not multiple sources verifying it.
+```
+
+## verify-before-polish — Never let an AI-generated summary's clean formatting substitute for checking the claim underneath, especially before an irreversible or high-stakes action
+
+- Explain it like I'm 10: If a friend tells you something wild and you're not sure it's true, you'd probably ask "wait, are you sure?" But if instead they hand you a neatly typed, official-looking memo saying the same wild thing, a lot of people would believe it without asking — even though a memo can say anything a text message can. Looking official isn't the same as being checked. The fix isn't "don't use AI to write things up" — it's "the person or process reading it has to ask 'was this actually verified?' regardless of how finished it looks."
+- Category: Guardrails / human-AI workflow design
+- Confidence: emerging (one well-corroborated, high-stakes real-world incident; the general "polish creates unearned trust" pattern is plausible and consistent with known human cognitive biases, but this workspace has not yet found a second independent incident demonstrating the same specific mechanism)
+- Recommendation: When an agent or workflow is used to draft any summary, report, or brief that a human will act on, require the agent to carry forward an explicit, unremovable confidence/verification marker (e.g., "UNVERIFIED — model-generated, not independently confirmed") through every reformatting or "make this look official" step, rather than letting the polished output stand alone. Downstream steps — including a second AI pass that reformats a first AI pass's output — must not silently drop that marker. For any action that is expensive to reverse (deploying, boarding a vessel, firing someone, wiring money), require a verification step that does not itself depend on the same tool that produced the original claim.
+- Why: In a CNN-reported, TechCrunch-corroborated spring 2026 incident, a military analyst's chatbot fabricated a finding about a ship's cargo, and the analyst then used the same chatbot to turn that fabrication into an official-looking report that moved up the chain of command with no independent check, nearly triggering a boarding operation before the error was caught at the last minute. The failure here is distinct from the sandbox-escape and false-environment-claim guardrail failures already in this workspace (`agent-sandbox-containment-incident`, `anthropic-eval-harness-incidents`): those are about an agent breaking a technical boundary; this is about a human trusting an AI output because it looked finished, with the same tool used twice — once to generate the error, once to launder it into something that read as authoritative.
+- Evidence: [Ledger: military-ai-hallucination-near-miss](ledger.md)
+- References: [CNN, "Exclusive: US military had close call after using AI for false intelligence report, sources say," 2026-09-18](https://www.cnn.com/2026/09/18/politics/us-military-ai-false-intelligence-china-ship), [TechCrunch, "AI hallucination nearly triggers US military operation," 2026-09-18](https://techcrunch.com/2026/09/18/ai-hallucination-nearly-triggers-us-military-operation/)
+- Last updated: 2026-09-19
+- Status: active
+
+### Summary
+
+**[TechCrunch, "AI hallucination nearly triggers US military operation" (2026-09-18)](https://techcrunch.com/2026/09/18/ai-hallucination-nearly-triggers-us-military-operation/)**
+
+TechCrunch's same-day independent pickup of CNN's exclusive report, confirming the core narrative for a tech readership.
+
+Key points: confirms a chatbot fabricated a cargo-manifest finding and that the same tool reformatted it into an official-looking report; confirms the operation was aborted at the last minute once the AI origin was discovered; does not name the specific AI tool or vendor involved, which limits how far this can be pinned to any one product.
+
+- [CNN, "Exclusive: US military had close call after using AI for false intelligence report, sources say," 2026-09-18](https://www.cnn.com/2026/09/18/politics/us-military-ai-false-intelligence-china-ship): the original exclusive reporting (anonymous sources); notes SOCPAC and the Pentagon did not respond to requests for comment.
+
+### Bad example
+
+```markdown
+## Reporting
+
+When asked to summarize findings into a report, write it in a clean,
+professional format suitable for forwarding to leadership.
+```
+
+Optimizes purely for how finished the output looks, with no instruction to carry
+forward uncertainty or flag what wasn't independently checked.
+
+### Good example
+
+```markdown
+## Reporting
+
+When summarizing findings into a report, keep an explicit confidence
+marker on every claim that hasn't been independently verified (e.g.,
+"UNVERIFIED — single AI-assisted read, not cross-checked"). If a later
+step reformats or polishes this report, that marker must carry over
+unchanged — formatting a claim more cleanly never counts as verifying
+it. Before this report is used to justify an irreversible or high-stakes
+action, flag that it requires a human verification step independent of
+the tool that generated it.
+```
