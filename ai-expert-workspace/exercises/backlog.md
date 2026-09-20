@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Measure this workspace's own fan-out tax: sequential vs. parallel subagents on the same task
+
+- Explain it like I'm 10: You've just learned that hiring extra helpers isn't free — each one needs the whole job explained to them first. This exercise is you actually timing and costing that, on your own tasks, instead of taking someone else's word for how expensive it is.
+- Status: proposed
+- Based on: [Ledger: claude-code-projects-parallel-agents](../knowledge/ledger.md#claude-code-projects-parallel-agents) (Claude Code Projects redesign + Agent Teams ~7x token figure, added 2026-09-20); [Playbook: budget-multi-agent-fanout-overhead](../knowledge/playbook.md#budget-multi-agent-fanout-overhead)
+- Objective: Get a first-hand, this-workspace-specific number for the token/cost overhead of fanning a task out across multiple parallel subagents (via the `Agent` tool) versus running it as one sequential agent, so future scouting/exercise/proposal work in this workspace makes fan-out decisions on measured evidence, not on Anthropic's or a third party's published averages.
+- Why now: This session's own research pass this week found a credible, independently-corroborated ~5–7x token multiplier and large fixed per-subagent overhead for multi-agent fan-out — but every cited figure is from someone else's workload. A cheap, direct measurement on a real AIExpert task (e.g., a Scout-mode research pass across 3 subtopics) turns a general rule into a locally-verified one.
+- Prerequisites: Ability to read token/cost usage for a session or subagent call (whatever this environment exposes, e.g. a usage/cost summary in the harness UI or logs).
+- Deliverable: A short note (Markdown, can live in `references/`) with two runs of the same research task — once as 3 parallel subagents, once as one sequential agent covering all 3 subtopics — with token/cost totals for each, plus a one-paragraph recommendation for when this workspace should and shouldn't fan out.
+- Estimate: 30–60 min
+- Steps: (1) Pick a task this workspace already does that has 2–3 independent subtopics (e.g., researching 3 unrelated AI news topics); (2) run it once via 3 parallel `Agent` calls, recording token/cost usage per call and the total; (3) run the same 3 subtopics once as a single sequential agent pass, recording total token/cost usage; (4) compare totals and note wall-clock time for both; (5) write the one-paragraph recommendation.
+- Acceptance tests: Both runs actually happened (not estimated); the note reports a concrete total-token or total-cost number for each run, not just a qualitative impression.
+- Reflection: Did the measured multiplier land near the ~5–7x figure from this week's research, or differ — and if it differed, what about this workspace's tasks (short subtopics? shared context already cached?) explains the difference?
+- Optional extension: Repeat the comparison using the `Workflow` tool (which explicitly warns about spawning many agents) on a task with 5+ subtopics, to see whether the overhead trend holds or worsens at larger fan-out.
+
