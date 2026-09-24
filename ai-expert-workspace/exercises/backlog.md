@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit AIExpert's own skills against the OWASP Agentic Skills Top 10 (AST10) checklist
+
+- Explain it like I'm 10: A previous exercise idea checked whether AIExpert's own skill files were built in the right *shape* (following the open format so they load correctly everywhere). This one checks something different and more important: not "is it shaped right" but "is it safe" — walking down a real, named list of ten specific things that can go wrong with an AI add-on and checking each one against AIExpert's own actual files, one at a time.
+- Status: proposed
+- Based on: [Ledger: owasp-agentic-skills-top-10](../knowledge/ledger.md#owasp-agentic-skills-top-10); playbook: [vet-skill-provenance-and-runtime](../knowledge/playbook.md#vet-skill-provenance-and-runtime)
+- Objective: Turn the general "vet skill provenance and runtime behavior" recommendation into a concrete, repeatable checklist pass, using OWASP's ten named risk categories (AST01-AST10) instead of an informal read-through.
+- Why now: This workspace already had a spec-conformance exercise idea (validate against the agentskills.io spec) and a provenance-check idea from an earlier scan, neither yet formalized; OWASP's AST10 gives both a single, authoritative, versioned checklist to run instead of inventing one.
+- Prerequisites: Access to this workspace's own Claude/Codex skill definitions and the ai-expert-portal repo's skill/plugin files; the AST10 category list (full ten categories with severities are in the linked ledger entry).
+- Deliverable: A short Markdown audit table listing each AST01-AST10 category, whether it applies to AIExpert's own skill files, and either "not applicable / why" or a concrete finding plus proposed fix.
+- Estimate: 30-60 min
+- Steps: (1) List every skill/plugin file this workspace or its Claude/Codex agent definitions load; (2) for each of the ten AST categories, check whether it applies (e.g., AST04 Insecure Metadata — does anything parse YAML/JSON from an untrusted source; AST06 Weak Isolation — what sandbox, if any, do these skills run in); (3) record a finding or "not applicable" with a one-line reason for each category; (4) file anything concerning as a proposal in `proposals/`, not a silent fix.
+- Acceptance tests: All ten categories addressed (none skipped); at least one finding names a specific file, not a generic restatement of the category name.
+- Reflection: Which of the ten categories were easy to check statically, and which genuinely require a runtime/behavioral test (per AST08 "Poor Scanning" — pattern-matching alone misses semantic threats) that a one-time read can't catch?
+- Optional extension: Compare this checklist-based audit against a generic "review this for security issues" prompt on the same files, to see whether the named categories actually surfaced anything the generic prompt would have missed.
+
