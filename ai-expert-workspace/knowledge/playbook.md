@@ -326,10 +326,10 @@ one it was written on.
 - Category: Agent/skill factories — supply-chain security
 - Confidence: emerging (real, multi-outlet-corroborated incidents at meaningful scale; but the headline statistics come from two security vendors' own research/telemetry, not an independently reproduced count, and this session could not read the primary sources directly due to a network restriction — see the ledger entry's evidence-gathering note)
 - Recommendation: Treat every third-party AI skill/add-on (whether for this workspace's own Claude/Codex setup or any agent built here) as untrusted supply-chain input until checked on two axes, not one: (1) **provenance** — does it come from a verified publisher, not just a plausible-sounding name or a vendor-impersonating listing, and does its install source (registry, repo) show a real ownership history rather than a recently-cloned high-download-count clone; (2) **runtime behavior**, not just static text — read the current SKILL.md, but also confirm (via a sandboxed dry run, a runtime scanner, or at minimum re-reading it periodically after install) that what it actually does matches what it says, since the documented attack pattern here is to ship a clean skill, let it earn trust and downloads, and inject the malicious instruction later. A high install count is social proof of popularity, not of safety — it was the attacker's own goal in the confirmed campaign this entry is based on. This extends, and does not replace, the existing `agent-skills-open-standard-conformance` entry: spec conformance tells you a skill is well-formed, not that it is safe or still doing what it originally did.
-- Why: A confirmed, multi-outlet-corroborated campaign cloned trusted skills on Vercel's `skills.sh` registry, let the clones accumulate over 1.7 million aggregate installs, and only then injected instructions to exfiltrate SSH keys, cloud credentials, and other secrets from the installing machine — a static, install-time-only review would have found nothing wrong. Separately, an industry scan reported over 17,800 public AI add-ons (6.7M installs) pulling their real instructions from unverified external sources, including some directly impersonating Anthropic and OpenAI. Both findings show the same gap this workspace's other containment-focused entries already establish for agent sandboxes and browser content (`air-gap-governing-writes`, `untrusted-content-is-data-not-instructions`) now applies to the skill supply chain itself: a boundary or trust claim that is only checked once, at a point in time, is not a durable control.
-- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md)
-- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)
-- Last updated: 2026-09-17
+- Why: A confirmed, multi-outlet-corroborated campaign cloned trusted skills on Vercel's `skills.sh` registry, let the clones accumulate over 1.7 million aggregate installs, and only then injected instructions to exfiltrate SSH keys, cloud credentials, and other secrets from the installing machine — a static, install-time-only review would have found nothing wrong. Separately, an industry scan reported over 17,800 public AI add-ons (6.7M installs) pulling their real instructions from unverified external sources, including some directly impersonating Anthropic and OpenAI. Both findings show the same gap this workspace's other containment-focused entries already establish for agent sandboxes and browser content (`air-gap-governing-writes`, `untrusted-content-is-data-not-instructions`) now applies to the skill supply chain itself: a boundary or trust claim that is only checked once, at a point in time, is not a durable control. **Update (2026-09-24):** OWASP's Agentic Skills Top 10 (AST10) gives this recommendation a named, versioned checklist instead of a general warning — AST05 "Untrusted External Instructions" (mutable remote content fetched at runtime without verification) is the formal match for the clone-then-poison mechanism above, and AST02 "Supply Chain Compromise" for the registry-poisoning pattern generally. Run a candidate skill against all ten AST categories (Malicious Skills, Supply Chain Compromise, Over-Privileged Skills, Insecure Metadata, Untrusted External Instructions, Weak Isolation, Update Drift, Poor Scanning, No Governance, Cross-Platform Reuse), not just the two axes above informally — the two axes (provenance, runtime behavior) are still the right mental model, AST10 is the checklist that operationalizes them.
+- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md), [Ledger: owasp-agentic-skills-top-10](ledger.md)
+- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/), [OWASP, "Agentic Skills Top 10" (GitHub project repo)](https://github.com/OWASP/www-project-agentic-skills-top-10)
+- Last updated: 2026-09-24
 - Status: active
 
 ### Summary
@@ -338,6 +338,7 @@ one it was written on.
 - [Zenity (BusinessWire), 2026-08-06](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills): the original disclosure of the clone-then-poison campaign, its 1.7M+ install count, and the technique (clean skill earns trust, malicious instruction injected later).
 - [CSO Online](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html): independent security-press corroboration of the same campaign and its scale.
 - [Snyk](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/): technical explainer, co-authored with Vercel, on securing the agent-skill supply chain.
+- [OWASP, "Agentic Skills Top 10" (GitHub project repo)](https://github.com/OWASP/www-project-agentic-skills-top-10): the named, versioned ten-category checklist (AST01-AST10) that operationalizes this recommendation, mapped to the Cloud Security Alliance's MAESTRO threat model.
 
 **[TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use" (2026-09-01)](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)**
 
@@ -468,3 +469,56 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## name-the-automation-level — Describe how automated an AI-assisted workflow really is with a supervision-based level (AL0-AL5), not a vague "AI-powered" claim or a raw usage percentage — and always publish the measurement's own blind spots alongside the number
+
+- Explain it like I'm 10: Imagine a car factory that used to need a person to build every car by hand, and now some cars roll almost all the way down the line by themselves — a person just watches and steps in only if something looks wrong. If you want to actually compare factories (or the same factory over time), "it's AI-powered now" tells you nothing useful — you need a real scale, like "0 = no help at all" up to "5 = fully automatic, nobody watching." Anthropic built exactly that scale for its own work of building AI, and — importantly — also admitted, out loud, several specific ways their own number could be wrong. That second part matters just as much as the scale itself: a measurement that hides its own blind spots is more dangerous than no measurement at all, because people trust it more than they should.
+- Category: Meta-agents / measurement and evaluation
+- Confidence: emerging (the AL0-AL5 taxonomy itself is clean and reusable; the specific 26% headline figure comes from one company measuring itself over a single one-week snapshot, with real, self-admitted methodology gaps)
+- Recommendation: When describing how automated an agent-assisted workflow is — in a status update, a dashboard, a vendor claim, or your own project notes — use a supervision-based level (roughly: 0 no AI involvement, 1 minimal, 2 AI assists, 3 AI collaborates under close direction, 4 AI leads end-to-end from a prompt while a human supervises, 5 fully autonomous, no human in the loop) instead of "AI-powered," "automated," or a bare adoption percentage. The level forces you to say who is actually accountable for the outcome at each step, which a percentage or an adjective does not. Whenever you or a vendor publishes a number on this kind of scale, publish its blind spots in the same breath: the sample window, how classification was judged and how often independent judges agreed, whether the task list is frozen or can see new task types, and where the safety/capability line got fuzzy. A number without its own error bars invites exactly the "it's basically autonomous now" misreading that independent reviewers flagged here.
+- Why: Anthropic's own R&D Automation Index shows both the value of a concrete supervision scale (it turned a vague "Claude is getting more capable" into a comparable, trackable trend: under 1% to 12% to 22% to 26% "leading" over six months) and the risk of citing such a number without its caveats. Independent technical review found the model doing the task classification agreed with human judges only 59% of the time (versus 35% human-to-human agreement) — meaning a meaningful share of the underlying labels are themselves uncertain — and Anthropic's own AL4 definition ("a human supervises") is compatible with many very different real setups, from an engineer watching every step to one who glances at a dashboard once a day. Treat the scale as a genuinely useful, reusable tool; treat any single vendor's specific percentage on it as a self-reported claim, not an audited fact, until independently replicated.
+- Evidence: [Ledger: anthropic-rd-automation-index](ledger.md)
+- References: [Anthropic Institute, "Measurements for understanding the pace of AI development inside frontier labs," 2026-09-17](https://www.anthropic.com/institute/measuring-pace-of-ai-development), [dev.to, Reid Marlow, "Anthropic's R&D Automation Index measures supervision, not autonomy"](https://dev.to/reidmarlow/anthropics-rd-automation-index-measures-supervision-not-autonomy-i0i), [Forkast News, "Anthropic Says Claude Leads 26% of Its Own R&D. Five Days Earlier, Its CEO Said the Industry Should Slow Down."](https://forkast.news/anthropic-says-claude-leads-26-of-its-own-rd-five-days-earlier-its-ceo-said-the-industry-should-slow-down/)
+- Last updated: 2026-09-24
+- Status: active
+
+### Summary
+
+**[Anthropic Institute, "Measurements for understanding the pace of AI development inside frontier labs" (2026-09-17)](https://www.anthropic.com/institute/measuring-pace-of-ai-development)**
+
+Anthropic's own primary publication introducing the R&D Automation Index and the AL0-AL5 automation-level scale this recommendation is built on.
+
+Key points: defines the six-level automation scale (built on a framework from Epoch AI) with AL3 "collaborates" and AL4 "leads" as the key working distinction; reports the 26% AL4 figure for August 2026, up from under 1% in February; explicitly discloses methodology caveats including a 59% model-vs-human judge agreement rate, a frozen July 2026 task baseline that can't see new task categories, and a single one-week compute snapshot it calls insufficient for trend analysis.
+
+- [dev.to, Reid Marlow](https://dev.to/reidmarlow/anthropics-rd-automation-index-measures-supervision-not-autonomy-i0i): independent critical analysis arguing the index measures supervision, not autonomy, and the source of the 59% judge-agreement caveat used in this recommendation.
+- [Forkast News](https://forkast.news/anthropic-says-claude-leads-26-of-its-own-rd-five-days-earlier-its-ceo-said-the-industry-should-slow-down/): independent framing noting the tension between this announcement and Anthropic's own "pace the frontier" call five days earlier — a reminder that a lab's stated position and its own metrics can be in tension.
+
+### Bad example
+
+```markdown
+## Status update
+
+Our deployment pipeline is now AI-powered and largely autonomous.
+```
+
+Says nothing about what "autonomous" actually means, gives no measurement,
+and states no caveats — indistinguishable from marketing copy, and doesn't
+say who is actually accountable when it breaks.
+
+### Good example
+
+```markdown
+## Status update
+
+Our deployment pipeline is at AL3 ("AI collaborates"): the agent drafts
+and applies routine Terraform plan changes, but an engineer reviews and
+approves before every apply, and stays engaged if anything looks
+unexpected. We have not reached AL4 (unsupervised apply) and are not
+currently measuring toward AL5.
+Caveat: this is our own classification, not independently audited, based
+on a one-week sample of recent changes.
+```
+
+Names the actual supervision level, says exactly what a human still does,
+states what level has *not* been reached, and flags the classification as
+self-reported rather than audited.
