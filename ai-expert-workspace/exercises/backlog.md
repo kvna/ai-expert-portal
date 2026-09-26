@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit whether your agent tools' "pins" are actually enforced
+
+- Explain it like I'm 10: You know how a lock only actually protects a door if someone occasionally checks that it's really locked, not just that there's a sign saying "locked" on it? This exercise is checking every "we pin this to a fixed version" sign in your own AI tooling to see if there's a real lock behind it, or just the sign.
+- Status: proposed
+- Based on: [Ledger: plugin4shell-sha-pinning-bypass](../knowledge/ledger.md#2026-09-17-plugin4shell-sha-pinning-bypass) (Plugin4Shell zero-click RCE across Claude Code, Codex, GitHub Copilot, and Gemini CLI, disclosed 2026-09-17); playbook: verify-pins-are-enforced-not-just-claimed
+- Objective: Turn the abstract Plugin4Shell lesson ("a 'pinned' claim is not a control until something verifies it") into a concrete, repeatable check across every place this workspace's own tooling relies on a pin — plugin/skill installs, container image digests, Terraform provider version constraints, and lockfiles.
+- Why now: Four independent, competing vendors all shipped the same enforcement gap in production tooling that this workspace directly depends on (this session's own Claude Code instance was affected before it was patched in 2.1.179). That's strong evidence this class of gap is easy to miss elsewhere, including in this workspace's own setup or in any Terraform/Azure pipeline relying on "pinned" provider or module versions.
+- Prerequisites: Access to this workspace's Claude Code and (if applicable) Codex configuration; at least one Terraform module or provider block with a pinned version constraint to compare against.
+- Deliverable: A short Markdown checklist/report listing every "pin" this workspace's tooling relies on (agent plugin installs, any container images, Terraform provider/module version constraints), and for each: whether you found documented or code-level evidence that the pin is actually verified against the resolved artifact, or whether it's an unverified trust claim.
+- Estimate: 30–60 min
+- Steps: (1) Confirm the local Claude Code version is at or above the patched 2.1.179 baseline (`claude --version`); (2) list any installed plugins/skills and how each is pinned (if at all); (3) pick one Terraform provider/module block already in use and check whether the lockfile pins by hash (`required_providers` + `.terraform.lock.hcl`) versus by version range alone; (4) for each item, record verified / unverified / not applicable.
+- Acceptance tests: The checklist covers at least the local agent tool version and one IaC pinning example; each item has an explicit verified/unverified judgment, not just a description.
+- Reflection: Which of your existing "pinned" assumptions turned out to be unverified? Does your Terraform/Azure pipeline actually fail closed on a hash mismatch, or only on a missing pin?
+- Optional extension: Extend the same checklist to a CI/CD pipeline you maintain — GitHub Actions pinned by SHA vs. by tag is the exact same class of gap (a tag, like a branch name, can be moved by whoever controls the repo).
+

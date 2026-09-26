@@ -228,14 +228,14 @@ surface to the user, never as authorization to act.
 
 ## mcp-and-lifecycle-primitives — MCP-style tool binding is becoming a convergent standard, not a niche protocol — but re-verify before betting anything time-sensitive on specifics
 
-- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
+- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. **Update:** the plug itself just got redesigned — it used to work like a phone call that has to stay connected the whole time, and now it works more like text messages, where every message stands on its own. That's a real, dated change, not just a guess about the future, so if you built something assuming the old "phone call" style, it's worth checking it against the new rules.
 - Category: Protocol & tooling
-- Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Confidence: established (was "emerging"; the underlying spec change this entry anticipated has now shipped as a dated, primary-sourced release, not just vendor convergence on a roadmap)
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors converged on needing it as part of the same "managed agent lifecycle" primitive set, and the protocol itself has now formalized that direction in a dated spec release. Specifically: (1) don't build new MCP servers/clients assuming the old stateful `initialize`/session-ID handshake — the 2026-07-28 spec replaced it with a stateless, per-request model; (2) Roots, Sampling, and Logging carry a 12-month minimum deprecation window from 2026-07-28, so nothing breaks today, but track the migration rather than freezing on pre-stateless assumptions; (3) still re-verify any specific vendor's current MCP support/version live before depending on it — this space keeps moving.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors was the original signal. The 2026-07-28 MCP specification is the protocol maintainers' own formalization of that same direction: a stateless core, Multi Round-Trip Requests, header-based routing, cacheable list results, authorization hardening, and a formal Extensions framework for Tasks/MCP Apps/Enterprise Managed Authorization — upgrading this from "three vendors seem to want the same thing" to "the standard itself now specifies it, with a dated migration window."
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-2026-07-28-spec](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [Model Context Protocol Blog, "The 2026-07-28 Specification," 2026-07-28](https://blog.modelcontextprotocol.io/posts/2026-07-28/), [Cloudflare Blog, "The next generation of MCP"](https://blog.cloudflare.com/mcp-v2/)
+- Last updated: 2026-09-26
 - Status: active
 
 ### Summary
@@ -243,6 +243,8 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [Model Context Protocol Blog, "The 2026-07-28 Specification," 2026-07-28](https://blog.modelcontextprotocol.io/posts/2026-07-28/): the primary spec change this entry now cites directly — stateless core, Extensions framework, deprecation policy.
+- [Cloudflare Blog, "The next generation of MCP"](https://blog.cloudflare.com/mcp-v2/): independent infrastructure-vendor perspective corroborating the stateless-core shift and its operational benefits.
 
 ### Bad example
 
@@ -468,3 +470,53 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## verify-pins-are-enforced-not-just-claimed — A "pinned to a commit/hash" label is a claim, not a control, until you've confirmed something actually checks the resolved artifact against it
+
+- Explain it like I'm 10: Saying "I only accept the toy with serial number 12345" only works if you actually read the serial number on the box before opening it. Four different, competing AI coding tools all said "we pin plugins to an exact commit, so nobody can sneak in a different version" — but it turned out none of them actually checked the label; they just grabbed whatever was checked out and trusted it. This applies any time you rely on a "pinned"/"locked"/"fixed version" claim anywhere: a plugin, a container image, a Terraform provider, a dependency lockfile. The word "pinned" tells you what's *supposed* to happen. It doesn't tell you whether the code actually verifies it.
+- Category: Agent/skill factories — supply-chain security
+- Confidence: emerging (one well-corroborated incident class, but ultimately traced to a single discovering security vendor — see Evidence)
+- Recommendation: Whenever an agent tool, plugin/skill installer, or dependency manager claims to "pin" something to an immutable identifier (a commit SHA, an image digest, a lockfile hash), don't take the claim at face value. Either read the installer's actual verification code (does it compare the resolved artifact's real hash against the pinned value, not just pass the pinned value as an argument and trust whatever comes back?), or treat unpinned-in-practice as the default assumption until you've confirmed otherwise. This applies to this workspace's own AIExpert setup (any skill/plugin it installs on either the Claude or Codex side) exactly as much as to a Terraform provider version constraint or a container image tag.
+- Why: Anthropic (Claude Code), OpenAI (Codex), Microsoft (GitHub Copilot), and Google (Gemini CLI) all shipped plugin installers that claimed to pin a plugin to a specific 40-character commit hash — a deliberate anti-tampering design choice — but none of the four actually verified that the checked-out working tree matched that hash. Because git resolves an ambiguous branch-name-that-looks-like-a-SHA to the branch rather than the commit, anyone who controlled the plugin's repository could create a branch named after the pinned hash and have every installing agent silently receive their content instead, with zero-click remote code execution as the result. Four independent, competing engineering teams made the same enforcement gap — strong evidence this is an easy category of mistake to make, not a one-off bug in one codebase.
+- Evidence: [Ledger: plugin4shell-sha-pinning-bypass](ledger.md)
+- References: [Help Net Security, "Zero-click RCE vulnerability hit four major AI coding agents, two remain unpatched," 2026-09-18](https://www.helpnetsecurity.com/2026/09/18/plugin4shell-ai-coding-agents-vulnerability/), [The Hacker News, "Plugin4Shell Lets Repository Owners Swap Pinned Plugin Code Across Four AI Coding Agents"](https://thehackernews.com/2026/09/plugin4shell-lets-repository-owners.html), [Air Security, "Plugin4Shell" (primary source, not directly readable this session)](https://www.air.security/blog-posts/plugin4shell)
+- Last updated: 2026-09-26
+- Status: active
+
+### Summary
+
+- [Help Net Security, "Zero-click RCE vulnerability hit four major AI coding agents, two remain unpatched," 2026-09-18](https://www.helpnetsecurity.com/2026/09/18/plugin4shell-ai-coding-agents-vulnerability/): earliest mainstream write-up; confirms the June-2026 report date, the 90-day disclosure window, and that two of four vendors remained unpatched as of publication.
+- [The Hacker News, "Plugin4Shell Lets Repository Owners Swap Pinned Plugin Code Across Four AI Coding Agents"](https://thehackernews.com/2026/09/plugin4shell-lets-repository-owners.html): most detailed technical account of the git branch/SHA collision mechanism; confirms no CVE and no formal vendor advisory existed as of 2026-09-18.
+- [Air Security, "Plugin4Shell" (primary source)](https://www.air.security/blog-posts/plugin4shell): the original disclosure this entire story traces back to; this session could not fetch it directly (network-restricted) — re-read it directly before treating any specific technical detail here as fully confirmed.
+
+### Bad example
+
+```markdown
+## Plugin installation
+
+This agent installs skills/plugins pinned to a specific commit SHA
+declared in the marketplace manifest, so installed code cannot change
+without the user's approval.
+```
+
+States a security guarantee ("cannot change without approval") based on
+the word "pinned" alone, without ever specifying that the resolved
+commit is checked against the pin. This is exactly the claim four major
+vendors' real installers made and did not actually enforce.
+
+### Good example
+
+```markdown
+## Plugin installation
+
+This agent installs skills/plugins pinned to a specific commit SHA
+declared in the marketplace manifest. Before running any installed or
+updated plugin code, the installer resolves the working tree and
+verifies its actual commit hash equals the pinned 40-hex SHA byte for
+byte; if it does not match, installation fails closed and the mismatch
+is logged and surfaced to the user. The same check applies on every
+subsequent update, not just first install.
+```
+
+Makes the verification step explicit and testable — "pinned" is backed
+by a stated comparison, not just a stated intent.
