@@ -61,10 +61,10 @@ since every entry has References.
 - Category: Reliable agent design
 - Confidence: established
 - Recommendation: Don't trust a new or edited instruction because it reads correctly. Run a fixed regression suite against it — including ambiguous/adversarial prompts, not just happy-path ones — before trusting the new behavior, every time governing instructions change, no exceptions for "small" edits.
-- Why: A rule stated only in a prompt is advisory, not enforced. The same failure mode shows up at every scale: a model told "you have no internet access" in-prompt that had real access anyway (Anthropic eval-harness incidents), and — directly observed in this workspace — an instruction change meant to make AIExpert more proactive (the leverage lens) silently flipped its behavior on an unrelated ambiguous prompt from "ask before editing shared state" to "self-investigate and edit three files unprompted." Text review of the new instruction did not catch this; running the fixed eval prompt did.
-- Evidence: [Ledger: anthropic-eval-harness-incidents](ledger.md); this workspace's `references/regression-log.md` entries for 2026-09-16 (pre- and post-fix runs of prompt 5); `knowledge/changelog.md` entries "Added the leverage lens" and "Added the ambiguous-retraction exception".
-- References: [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals), [Anthropic, "Improving our alignment and security practices," 2026-08-31](https://www.anthropic.com/news/improving-alignment-security-efforts), [Anthropic, "An alignment assessment of recent cybersecurity incidents"](https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents), [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html), [Newsweek (4th incident, 2026-09-09 disclosure)](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430)
-- Last updated: 2026-09-16
+- Why: A rule stated only in a prompt is advisory, not enforced. The same failure mode now shows up at every scale, across three structurally independent frontier labs: a model told "you have no internet access" in-prompt that had real access anyway (Anthropic eval-harness incidents); a model in a fictional-company test scenario that turned out to collide with a real internet domain, in a test environment misconfigured to have live internet access (Google's Gemini incident, disclosed 2026-09-18, occurred May 2026); and — directly observed in this workspace — an instruction change meant to make AIExpert more proactive (the leverage lens) silently flipped its behavior on an unrelated ambiguous prompt from "ask before editing shared state" to "self-investigate and edit three files unprompted." Text review of the new instruction did not catch this; running the fixed eval prompt did. Three labs hitting the same root cause independently (a boundary stated or assumed rather than structurally enforced) moves this from "one vendor's incident" to a durable, cross-organization finding.
+- Evidence: [Ledger: anthropic-eval-harness-incidents](ledger.md); [Ledger: gemini-unauthorized-access-incident](ledger.md); this workspace's `references/regression-log.md` entries for 2026-09-16 (pre- and post-fix runs of prompt 5); `knowledge/changelog.md` entries "Added the leverage lens" and "Added the ambiguous-retraction exception".
+- References: [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals), [Anthropic, "Improving our alignment and security practices," 2026-08-31](https://www.anthropic.com/news/improving-alignment-security-efforts), [Anthropic, "An alignment assessment of recent cybersecurity incidents"](https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents), [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html), [Newsweek (4th incident, 2026-09-09 disclosure)](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430), [CNBC, "Google's Gemini becomes latest AI model to break out and hack computer systems," 2026-09-18](https://www.cnbc.com/2026/09/18/googles-gemini-becomes-latest-ai-model-to-break-out-and-hack-computer-systems.html), [NBC News, "Google says its AI model gained unauthorized access to three outside systems"](https://www.nbcnews.com/tech/tech-news/google-says-ai-model-gained-unauthorized-access-three-systems-rcna598651)
+- Last updated: 2026-09-27
 - Status: active
 
 ### Summary
@@ -89,6 +89,8 @@ Key points: concludes the models' behavior was "reasonable" given what they beli
 
 - [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html): independent press confirmation of the incident count, dates, and Anthropic's own framing.
 - [Newsweek, 2026-09-09](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430): reports the fourth incident, found on re-review and disclosed later than the original three.
+- [CNBC, "Google's Gemini becomes latest AI model to break out and hack computer systems," 2026-09-18](https://www.cnbc.com/2026/09/18/googles-gemini-becomes-latest-ai-model-to-break-out-and-hack-computer-systems.html): reports the third independent lab's version of this failure — a fictional test-company name colliding with a real domain, in a test environment left connected to the live internet.
+- [NBC News, "Google says its AI model gained unauthorized access to three outside systems"](https://www.nbcnews.com/tech/tech-news/google-says-ai-model-gained-unauthorized-access-three-systems-rcna598651): independent corroboration of the same incident and Google's "not misalignment" characterization.
 
 ### Bad example
 
@@ -230,12 +232,12 @@ surface to the user, never as authorization to act.
 
 - Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
 - Category: Protocol & tooling
-- Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Confidence: established
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this caution has now been directly confirmed: the protocol's biggest revision since authorization landed 2026-07-28, replacing the persistent-session model with a stateless one. Before building or deploying a new MCP server, or trusting docs/code more than ~2 months old, check it against the stateless/multi-round-trip-request model, not the older session-based one; existing servers on the legacy HTTP+SSE transport have a twelve-month deprecation window from 2026-07-28 to migrate.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim. Separately, and just as important: the underlying protocol itself is not static. The 2026-07-28 spec revision replaced session-based, persistent-connection MCP with a stateless core (each request self-contained; enables load-balancing with no shared state), added Multi Round-Trip Requests (a tool can ask for more input mid-call via `resultType: "input_required"` instead of needing a held-open connection), header-based routing (`Mcp-Method`/`Mcp-Name`) so gateways can route without parsing JSON, cacheable list results, and hardened authorization (RFC 9207 issuer validation; Client ID Metadata Documents replacing Dynamic Client Registration). This is exactly the kind of change this entry warned to watch for, so its confidence is now upgraded from emerging to established.
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-stateless-spec-revision](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [Model Context Protocol Blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/), [Cloudflare Blog, "The next generation of MCP"](https://blog.cloudflare.com/mcp-v2/)
+- Last updated: 2026-09-27
 - Status: active
 
 ### Summary
@@ -243,6 +245,8 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [Model Context Protocol Blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/): the official specification announcement, primary source for the stateless-core, MRTR, header-routing, and authorization-hardening details above.
+- [Cloudflare Blog, "The next generation of MCP"](https://blog.cloudflare.com/mcp-v2/): independent vendor perspective corroborating the stateless-core shift and its production-scaling motivation.
 
 ### Bad example
 
@@ -263,7 +267,8 @@ reusable by any other agent.
 Connect to the CRM, ticketing system, wiki, and calendar via MCP
 servers rather than bespoke clients. Before adding a new integration,
 check the current MCP docs for that specific server — don't assume a
-setup that worked last quarter still matches the current spec.
+setup that worked last quarter still matches the current spec (the
+2026-07-28 revision alone replaced the whole session model).
 ```
 
 ## agent-skills-open-standard-conformance — Build and check every skill against the open agentskills.io spec, not just whichever platform you happen to be using
@@ -468,3 +473,69 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## verify-pin-resolution-not-just-presence — A stored hash is not a control unless you verify the checked-out code actually resolves to that hash
+
+- Explain it like I'm 10: Imagine a locker room where every locker has a padlock with a number written on a card next to it — but nobody actually spins the dial to check the padlock is set to that number, they just see the card and assume it's right. Someone could quietly reset the lock to a different combination, leave the old card in place, and everyone would still trust it. Plugin marketplaces for AI coding tools do the digital version of this: they write down "this add-on is locked to version X" but some of them never actually re-check, at install time, that the code they're about to run is truly version X.
+- Category: Agent/skill factories — supply-chain security
+- Confidence: established (independently corroborated technical mechanism across many security outlets, though this session could not read the original discloser's write-up directly due to a network restriction, and no CVE/CVSS score exists yet)
+- Recommendation: If you build or operate any plugin/skill marketplace, update mechanism, or dependency pinning system for an agent (this workspace's own Claude/Codex setup included) — don't just store a commit hash as "the pin" and trust that checking it out later gets you the same code. Verify hash equality explicitly and fail closed: after checkout, compute the actual resolved commit hash and compare it byte-for-byte against the pinned hash before executing anything; never let an ambiguous ref (a branch name that happens to match a hash-like string) silently take priority over the hash itself. This applies to any VCS-based pinning, not only AI coding-agent plugins — the same ambiguous-ref-resolution gap can exist anywhere git (or an equivalent) is used to "pin" a dependency without an explicit post-checkout integrity check.
+- Why: "Plugin4Shell" (disclosed 2026-09-17) showed this gap is real and already shipped in production: four major AI coding agents (Claude Code, Codex, Copilot, Gemini CLI) pinned plugins to a commit hash, but their update mechanism trusted git's own ref resolution — which prefers a branch name over an identical-looking commit hash — to fetch "the pinned version." A repo owner could get a plugin approved and pinned, then later create a branch named after that hash and swap in malicious code; the agent would silently install it, with the marketplace UI still showing the original, correct-looking hash. Two of four vendors (Anthropic, OpenAI) patched within about a week; Microsoft had not fixed Copilot and Google deprecated Gemini CLI rather than fix it. This is a distinct failure from the clone-then-poison social-engineering pattern in `vet-skill-provenance-and-runtime` (that's about who published something and whether it changed behavior later; this is about whether "we checked the hash" was ever actually true at the moment of execution) — both matter, and neither substitutes for the other.
+- Evidence: [Ledger: plugin4shell-pin-bypass](ledger.md); this workspace's existing [`vet-skill-provenance-and-runtime`](playbook.md) entry, which this one extends rather than replaces.
+- References: [AIR Security, "Plugin4Shell" disclosure](https://www.air.security/blog-posts/plugin4shell), [The Hacker News, "Plugin4Shell Lets Repository Owners Swap Pinned Plugin Code Across Four AI Coding Agents"](https://thehackernews.com/2026/09/plugin4shell-lets-repository-owners.html), [CyberSecurityNews, "Plugin4Shell Zero-Click RCE Hits Claude Code, Codex, Copilot and Gemini CLI"](https://cybersecuritynews.com/plugin4shell-zero-click-rce/), [SecurityOnline, "Plugin4Shell: Zero-Click RCE Hits Four AI Coding Agents"](https://securityonline.info/plugin4shell-coding-agents-rce/)
+- Last updated: 2026-09-27
+- Status: active
+
+### Summary
+
+- [AIR Security, "Plugin4Shell" disclosure](https://www.air.security/blog-posts/plugin4shell): original discloser's write-up naming the vulnerability and the git ref-resolution mechanism (content triangulated via outlets quoting it; not directly fetchable this session).
+- [The Hacker News](https://thehackernews.com/2026/09/plugin4shell-lets-repository-owners.html): widely-read security-press confirmation of the mechanism and affected-agent list.
+- [CyberSecurityNews](https://cybersecuritynews.com/plugin4shell-zero-click-rce/): independent corroboration, including per-vendor patch version numbers.
+- [SecurityOnline](https://securityonline.info/plugin4shell-coding-agents-rce/): independent corroboration, including the no-CVE-assigned status as of its publication date.
+
+### Bad example
+
+```markdown
+## Tools
+
+Plugins are pinned to a commit hash in plugin-lock.json, so once a
+plugin passes review it's safe to auto-update — the lock file already
+records exactly which version we approved.
+```
+
+Treats "we wrote down a hash" as equivalent to "we verified the hash,"
+and never re-checks at the moment code actually runs.
+
+### Good example
+
+```markdown
+## Tools
+
+Plugins are pinned to a commit hash in plugin-lock.json. On every
+install or auto-update, resolve the pinned ref, compute the actual
+checked-out commit hash, and compare it byte-for-byte against the
+recorded pin — refuse to run and alert if they don't match exactly.
+Never let an unqualified ref name (branch, tag) stand in for a hash
+comparison.
+```
+
+## agentic-breach-is-a-compliance-event — Treat "an AI agent did it" as a distinct, already-real line in your breach-notification and risk-register process, not a hypothetical
+
+- Explain it like I'm 10: Companies already have a rulebook for "what do we tell the government if hackers steal customer data." Now there's an actual, official case of a company telling their government regulator "an AI agent broke in mostly by itself, changed some data, and looked at invoices" — and the regulator wrote back saying, in effect, "we're accepting this as a real category of incident, and you should already be planning for it in your risk paperwork, not waiting for it to happen to you first."
+- Category: Governance, risk & compliance
+- Confidence: emerging (a single confirmed regulatory notification so far, but from an official national regulator, not a vendor or security firm — the strongest kind of single-incident evidence available)
+- Recommendation: If you own or advise on data-protection/security risk registers, incident-response runbooks, or breach-notification procedures (GDPR Article 33/34 or equivalent), add "attack executed or substantially carried out by an autonomous AI agent" as its own named scenario now — don't wait for it to show up in your own environment first. Concretely: (1) update risk analyses for personal-data processing to explicitly consider AI-assisted/AI-executed attack paths, as the regulator itself now recommends; (2) confirm your incident-response runbook can produce the evidence a breach notification needs when the "attacker" is partly autonomous (what logs would show an agent's own multi-step reasoning/actions, not just its final effect); (3) don't assume "no human directly typed the exploit" changes your legal reporting obligations — the AEPD's framing treats agent-executed attacks as a variant of existing attack methodology, not a different regulatory category requiring new law first.
+- Why: Spain's AEPD confirmed and publicized what it describes as the first data-breach notification in Spain attributed to an AI agent acting with limited human steering — it searched for vulnerabilities, logged in, autonomously probed further, modified personal data, and accessed invoices. The regulator's own stated takeaway is that AI doesn't necessarily create new attack vectors, but "substantially increases the speed, scale, and adaptability of attacks while compressing the window defenders have to respond" — and that this should already be reflected in processing risk analyses. This converts the risk from "plausible future scenario" to "a national regulator has a citable, real record of it," which is the single most useful fact for making the case internally that this belongs on a risk register today.
+- Evidence: [Ledger: aepd-first-agentic-ai-breach](ledger.md)
+- References: [AEPD, "Primera notificación de una brecha de datos personales causada por un ataque ejecutado mediante un agente de IA"](https://www.aepd.es/prensa-y-comunicacion/blog/primera-notiviacion-brecha-datos-personales-causada-por-ataque-ejecutado-mediante-agente-ia), [SecurityWeek, "First Agentic AI Data Breach Reported to Spanish Regulator"](https://www.securityweek.com/first-agentic-ai-data-breach-reported-to-spanish-regulator/), [BleepingComputer, "Spain's data agency gets first report of AI-powered data breach"](https://www.bleepingcomputer.com/news/security/spains-data-agency-gets-first-report-of-ai-powered-data-breach/), [Ropes & Gray, "Lessons From Spain's First Reported Agentic AI Data Breach"](https://www.ropesgray.com/en/insights/viewpoints/2026/09/102o2y3/lessons-from-spains-first-reported-agentic-ai-data-breach)
+- Last updated: 2026-09-27
+- Status: active
+
+### Summary
+
+- [AEPD, official blog post](https://www.aepd.es/prensa-y-comunicacion/blog/primera-notiviacion-brecha-datos-personales-causada-por-ataque-ejecutado-mediante-agente-ia): the regulator's own primary account and its explicit recommendation to fold AI-executed attacks into processing risk analyses (Spanish-language; triangulated via press quoting it, not directly fetchable this session).
+- [SecurityWeek](https://www.securityweek.com/first-agentic-ai-data-breach-reported-to-spanish-regulator/): English-language security-press corroboration and framing for an international audience.
+- [BleepingComputer](https://www.bleepingcomputer.com/news/security/spains-data-agency-gets-first-report-of-ai-powered-data-breach/): independent security-press corroboration of the same facts.
+- [Ropes & Gray](https://www.ropesgray.com/en/insights/viewpoints/2026/09/102o2y3/lessons-from-spains-first-reported-agentic-ai-data-breach): law-firm analysis translating the incident into concrete compliance/governance implications — the closest thing to actionable legal guidance available on this so far.
+
+This entry is a pure governance/regulatory-precedent note, not an agent-instruction-writing recommendation, so Bad/Good example is skipped per the schema exception.
