@@ -468,3 +468,69 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## verify-benchmark-deltas-before-switching-default-model — Re-verify a vendor's point-release benchmark claims independently before switching a production agent's default model tier
+
+- Explain it like I'm 10: A car company says "our new model gets six times better gas mileage!" — but the only measurement came from the car company's own test track. Before you trade in your car for it, you'd want someone else to drive it and check. Same idea here: before you switch your AI agent to a shiny "faster and cheaper" model because the vendor's own chart looks great, get an independent check first.
+- Category: Model selection / production rollout
+- Confidence: opinion (AIExpert's own synthesis, applying this workspace's existing research standard to a live example)
+- Recommendation: When a vendor ships a point release claiming large efficiency or benchmark gains — e.g. Anthropic's Sonnet 5.5 claiming a jump from 10.3% to 70.6% on Terminal-Bench 4.0, attributed to "fewer tool calls" rather than a new base model — don't switch a production agent's default model on the vendor's benchmark table alone. Run your own representative task suite, or wait for an independent eval-lab re-run, before treating the claimed cost/speed win as real for your workload.
+- Why: Point-release efficiency claims (fewer tokens or tool-calls per task) are workload-dependent and self-reported by the vendor. A >6x jump on one benchmark, from a release the vendor itself frames as an efficiency change rather than a new model, is exactly the kind of claim this workspace's own research standard already warns against treating as reliable production value without independent verification — this entry makes that standard concrete and actionable for the specific, recurring decision of "should I switch my agent's default model."
+- Evidence: [Ledger: claude-sonnet-5-5-release](../knowledge/ledger.md#claude-sonnet-5-5-release)
+- References: [Introducing Claude Sonnet 5.5](https://www.anthropic.com/claude-sonnet-5-5), [TechCrunch, "Anthropic releases Sonnet 5.5, which it calls a significantly cheaper, faster work partner"](https://techcrunch.com/2026/09/28/anthropic-releases-sonnet-5-5-which-it-calls-a-significantly-cheaper-faster-work-partner/)
+- Last updated: 2026-09-29
+- Status: active
+
+### Summary
+
+**[Introducing Claude Sonnet 5.5 (2026-09-28)](https://www.anthropic.com/claude-sonnet-5-5)** — Anthropic's own announcement.
+
+States the efficiency claim directly: fewer tokens per task, not a price change, driving the cost/speed win, alongside a benchmark table showing a large jump specifically on agentic/tool-use evals.
+
+Key points: the biggest deltas are concentrated in benchmarks that reward fewer tool calls and less token burn (Terminal-Bench 4.0, OSWorld 2.1) — precisely the metric an efficiency-tuned release would be expected to move, which is a reason for a workload-specific re-check rather than a reason to distrust the claim outright.
+
+**[Anthropic releases Sonnet 5.5, which it calls a significantly cheaper, faster work partner (2026-09-28)](https://techcrunch.com/2026/09/28/anthropic-releases-sonnet-5-5-which-it-calls-a-significantly-cheaper-faster-work-partner/)** — TechCrunch.
+
+Independent press framing notes this is a stronger positioning claim than a typical point release gets, without independently re-running any of Anthropic's benchmarks.
+
+Key points: confirms the release is being marketed as a genuine product in its own right ("work partner"), not merely a discount tier — useful context for why the benchmark table leans so heavily on efficiency metrics rather than raw capability.
+
+### Bad example
+
+```yaml
+# agent-config.yaml
+model: claude-sonnet-5-5   # vendor says 30% faster & cheaper — switched on release day
+```
+
+### Good example
+
+```yaml
+# agent-config.yaml
+model: claude-sonnet-5   # pinned; do not auto-follow vendor point releases
+# TODO(review by 2026-10-15): re-run eval/regression-suite.md against
+# claude-sonnet-5-5 before switching default — vendor claims fewer
+# tool-calls/task, not yet independently verified for our workloads.
+model_candidate: claude-sonnet-5-5
+```
+
+## vendor-safety-posture-is-a-procurement-risk-variable — Check a vendor's own usage restrictions against your buyer's intended use before assuming "safety-conscious" means "procurement-safe"
+
+- Explain it like I'm 10: Imagine a company says "we won't help build certain dangerous weapons, even for a paying customer." That's a good rule. But if your customer specifically wants something on that company's no-list, "they have good rules" and "they can do this job for you" are suddenly opposite facts, not the same fact. A US federal appeals court just confirmed a government buyer is allowed to treat a vendor's own safety refusal as a formal risk mark against them.
+- Category: Vendor / procurement governance
+- Confidence: emerging (the underlying court ruling is a single, well-corroborated legal event — verified by multiple independent outlets — but generalizing a durable procurement rule from one case, still under appeal, is inherently thin evidence so far)
+- Recommendation: When evaluating or recommending an AI vendor for a government-adjacent, defense-adjacent, or heavily regulated deployment, explicitly check whether the vendor's own usage-policy restrictions (what they refuse to let any customer do with their model) overlap with what *this specific buyer* wants to do. Do this as its own checklist line, separate from evaluating the vendor's technical security posture (sandboxing, data handling, credential scoping) — a vendor can be excellent on the latter and still be legally ineligible or disfavored for a given buyer because of the former.
+- Why: The Anthropic/Pentagon case shows a government buyer can legally treat a vendor's voluntary ethical-use restriction (refusing lethal-autonomous-weapons and domestic mass-surveillance use) as a formal "supply chain risk" factor under FASCSSA, upheld 2-1 on appeal. That decouples "is this AI vendor well-governed" from "is this AI vendor approved for my specific use" — two questions most procurement or vendor-risk checklists quietly treat as one. For anyone doing Azure/Terraform-style vendor risk assessment into regulated or defense-touching environments, a vendor's usage-policy scope is now a compliance variable to check against the buyer's actual intended use, not just a page on the vendor's trust site.
+- Evidence: [Ledger: anthropic-pentagon-supply-chain-risk-ruling](../knowledge/ledger.md#anthropic-pentagon-supply-chain-risk-ruling)
+- References: [US News](https://www.usnews.com/news/top-news/articles/2026-09-25/us-appeals-court-declines-to-block-pentagons-blacklisting-of-anthropic), [CNBC](https://www.cnbc.com/2026/09/25/pentagon-anthropic-ai-risk-appeals-court.html), [CNN](https://www.cnn.com/2026/09/25/tech/anthropic-pentagon-blacklist-dc-ruling), [Military Times](https://www.militarytimes.com/news/pentagon-congress/2026/09/25/us-appeals-court-upholds-pentagons-blacklisting-of-anthropic/), [Legal Insurrection](https://legalinsurrection.com/2026/09/appeals-court-rules-that-pentagon-can-label-anthropic-a-supply-chain-risk/)
+- Last updated: 2026-09-29
+- Status: active — revisit if the ruling is overturned on rehearing or by the Supreme Court
+
+### Summary
+
+- [US News, "US appeals court declines to block Pentagon's blacklisting of Anthropic"](https://www.usnews.com/news/top-news/articles/2026-09-25/us-appeals-court-declines-to-block-pentagons-blacklisting-of-anthropic): confirms the ruling, date, and stay pending appeal.
+- [CNBC, "U.S. appeals court upholds Pentagon designation of Anthropic as supply chain risk"](https://www.cnbc.com/2026/09/25/pentagon-anthropic-ai-risk-appeals-court.html): adds the business-impact and IPO-timing angle.
+- [CNN, "Federal appeals court rules Pentagon's blacklist of Anthropic was legal"](https://www.cnn.com/2026/09/25/tech/anthropic-pentagon-blacklist-dc-ruling): independent confirmation from a separate major outlet.
+- [Military Times, "US appeals court upholds Pentagon's blacklisting of Anthropic"](https://www.militarytimes.com/news/pentagon-congress/2026/09/25/us-appeals-court-upholds-pentagons-blacklisting-of-anthropic/): defense-procurement trade-press framing.
+- [Legal Insurrection, "Appeals Court Rules that Pentagon Can Label Anthropic a 'Supply Chain Risk'"](https://legalinsurrection.com/2026/09/appeals-court-rules-that-pentagon-can-label-anthropic-a-supply-chain-risk/): legal-commentary framing of the precedent's scope.
+
+This recommendation is a vendor-landscape/procurement note, not agent instruction-writing — no Bad/Good example applies.

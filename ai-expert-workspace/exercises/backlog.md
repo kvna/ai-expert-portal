@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a tiny model-swap regression harness
+
+- Explain it like I'm 10: Before you swap your car for one the dealer says is faster and cheaper to run, you'd want to drive both yourself over the same route and time it — not just trust the brochure. This is that same test drive, but for swapping which AI model your agent uses.
+- Status: proposed
+- Based on: [Ledger: claude-sonnet-5-5-release](../knowledge/ledger.md#claude-sonnet-5-5-release); [Playbook: verify-benchmark-deltas-before-switching-default-model](../knowledge/playbook.md#verify-benchmark-deltas-before-switching-default-model)
+- Objective: Build a small, reusable regression suite (5–10 representative tasks from your own real agent workloads) that you can re-run against any new model release before changing a production default — so "the vendor says it's better" turns into "I checked, and for my workloads it's actually better," every time, at near-zero marginal cost after the first build.
+- Why now: Anthropic shipped two point releases in a week (Opus 5.5, Sonnet 5.5) each claiming large efficiency/benchmark deltas; this is a recurring decision, not a one-off, so the harness pays for itself starting with the very next release.
+- Prerequisites: API access to at least two model versions (e.g. `claude-sonnet-5` and `claude-sonnet-5-5`); a handful of real prompts/tasks you already run through an agent.
+- Deliverable: A runnable script or notebook that sends the same 5–10 tasks to both models, records latency, token usage, and a pass/fail or quality score per task, and prints a comparison table.
+- Estimate: half day
+- Steps: (1) Pick 5–10 tasks that represent your actual agent workload (not generic trivia); (2) define a simple pass/fail or 1–5 quality rubric per task; (3) run all tasks against the current default model and the candidate model; (4) record latency, token counts, and cost per task alongside quality; (5) write a one-paragraph recommendation.
+- Acceptance tests: Both models actually ran on all tasks; the comparison table includes cost/latency and a quality judgment, not just the vendor's own benchmark numbers restated.
+- Reflection: Did the vendor's claimed efficiency gain show up on your specific workloads? Where did it diverge from the vendor's benchmark story, and why might that be (task shape, tool-use pattern, prompt style)?
+- Optional extension: Wire this harness into CI so any future model-version bump in a Terraform-managed Azure OpenAI/Anthropic deployment automatically triggers a re-run before the change is approved.
+
