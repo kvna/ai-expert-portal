@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a portable event-trigger handler
+
+- Explain it like I'm 10: Right now, several different AI tools each have their own way of saying "something happened out there, go do something about it" — Claude Code calls it a hook, OpenAI's new plugin system calls it an MCP Event, and others use plain webhooks. This exercise is about writing the "go do something about it" part just once, in a way that doesn't care which doorbell rang.
+- Status: proposed
+- Based on: [Ledger: openai-devday-mcp-events](../knowledge/ledger.md#openai-devday-mcp-events) (OpenAI DevDay 2026 MCP Events announcement, 2026-09-29); playbook: [mcp-and-lifecycle-primitives](../knowledge/playbook.md#mcp-and-lifecycle-primitives)
+- Objective: Build one small, reusable "event in, action out" handler function — with the trigger-specific wiring kept in a thin adapter layer — then wire it to two different trigger mechanisms (e.g., a Claude Code hook and a plain webhook simulating an MCP Events callback) to prove the core logic didn't need to change.
+- Why now: Three platforms (Anthropic hooks, Microsoft Agent Framework, and now OpenAI's MCP Events) have each independently shipped some version of event-driven agent triggering within weeks of each other — writing the handler logic as a portable interface now is a durable asset per this workspace's leverage lens, not a one-off integration.
+- Prerequisites: Claude Code (for the hooks side); ability to receive a simple HTTP webhook locally (e.g., a small local server or a tool like `ngrok`/`ssh -R` for the simulated MCP Events callback).
+- Deliverable: One handler module with a documented, trigger-agnostic function signature (event payload in, action list out), plus two thin adapters (a Claude Code hook script, a minimal webhook receiver) that both call it, and a short README noting what had to live in the adapter vs. the shared handler.
+- Estimate: half day
+- Steps: (1) Pick one concrete trigger scenario (e.g., "a file changed, decide whether to re-run a check"); (2) write the core decision logic as a pure function independent of any trigger mechanism; (3) wire it to a Claude Code hook; (4) wire the same function to a minimal webhook endpoint shaped like OpenAI's documented MCP Events delivery (signed payload in, HTTP 200 out); (5) note every place the two adapters had to diverge.
+- Acceptance tests: The same core function runs unmodified from both adapters; the README names at least two things a real MCP Events integration would also need (signature verification, idempotent delivery) that this exercise's stub skipped, so the gap to production is explicit.
+- Reflection: How much of "the event handler" was actually portable versus how much secretly depended on one platform's event shape? Would this design survive OpenAI's draft spec changing before it's ratified?
+- Optional extension: Add a third adapter for an Azure Event Grid or Logic Apps trigger, directly connecting this pattern to the user's existing Azure/IaC background.
+
