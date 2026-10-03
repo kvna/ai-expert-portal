@@ -228,14 +228,14 @@ surface to the user, never as authorization to act.
 
 ## mcp-and-lifecycle-primitives — MCP-style tool binding is becoming a convergent standard, not a niche protocol — but re-verify before betting anything time-sensitive on specifics
 
-- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
+- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. Now there's even an official exam you can take to prove you know how to use that plug correctly and safely, run by a neutral referee instead of any one company. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
 - Category: Protocol & tooling
-- Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Confidence: established (upgraded 2026-10-03 from emerging — see Why)
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration: three independent vendors converging on needing it, plus a neutral multi-vendor-governed certification body now exists around it. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale. Don't over-read the certification either: per the Cloud Security Alliance's own framing, "MCPA-certified" is evidence of baseline knowledge, not evidence that a specific MCP integration has actually been security-reviewed.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim. That convergence has now gone a step further than roadmaps: Anthropic donated MCP stewardship to the Agentic AI Foundation (a neutral Linux Foundation fund) back in Dec 2025, and as of Sept 2026 that foundation, with Anthropic/Google/AWS/Microsoft/Block/GitHub/Hugging Face as curriculum sponsors, launched the first formal certification (MCPA) with Security & Governance as its second-largest exam domain (24%). A neutral body with a published, multi-vendor-sponsored, security-weighted curriculum is institutionalization, not just parallel roadmaps — hence the upgrade to "established."
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-aaif-mcpa-certification](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [Linux Foundation, "Agentic AI Foundation Launches MCPA Certification..."](https://www.linuxfoundation.org/press/agentic-ai-foundation-launches-mcpa-certification-to-validate-mcp-expertise), [Cloud Security Alliance, "MCP Associate Certification: A Governance Signal, Not a Guarantee" (2026-09-25)](https://labs.cloudsecurityalliance.org/research/csa-research-note-mcpa-certification-governance-20260925-csa/)
+- Last updated: 2026-10-03
 - Status: active
 
 ### Summary
@@ -243,6 +243,8 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [Linux Foundation, "Agentic AI Foundation Launches MCPA Certification..."](https://www.linuxfoundation.org/press/agentic-ai-foundation-launches-mcpa-certification-to-validate-mcp-expertise): the primary press release for the new certification, its domain weightings, and sponsor list.
+- [Cloud Security Alliance research note (2026-09-25)](https://labs.cloudsecurityalliance.org/research/csa-research-note-mcpa-certification-governance-20260925-csa/): independent, deliberately skeptical take — a certification signals knowledge, not deployment safety.
 
 ### Bad example
 
@@ -468,3 +470,52 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## always-on-agents-need-a-forced-boundary — An always-on agent has no natural session end to rotate credentials or re-scope access, so you have to build one in deliberately
+
+- Explain it like I'm 10: A regular AI helper is like a contractor who comes to your house, does the job, and leaves — when they're gone, they're gone, and you can change the locks whenever you want. An "always-on" agent (like OpenAI's new Dots) is more like a contractor who moves into a spare room, keeps their own set of keys permanently, and can be texted by anyone on your family group chat to go do something. That's genuinely useful, but nobody designed a day where you naturally take the keys back — so if you want that to ever happen, you have to schedule it yourself, on purpose.
+- Category: Containment / air-gaps
+- Confidence: opinion (AIExpert's own synthesis — this is a new product category as of this scan, so there's no incident evidence yet, only the general pattern from already-established entries below)
+- Recommendation: Before adopting or building any "always-on"/persistent agent (its own standing cloud compute, credentials that outlive a single task, and more than one inbound channel it listens on — chat, Slack, Teams, email), decide up front, as part of its configuration rather than an afterthought: (1) a maximum credential/session lifetime after which access is force-re-scoped or re-approved, even if the agent "is still working on something"; (2) an explicit allowlist of inbound channels it will accept instructions from, since each additional channel (Slack, Teams, a shared inbox) is a new prompt-injection entry point into a process that never stops running; (3) a tamper-evident log of what the agent did while unattended, reviewed on a cadence, not just on complaint. Apply this whether the product is a vendor's (Dots-style) or one your own team builds on a managed-agent API.
+- Why: A session-based agent gets a free, structural checkpoint — session end — at which credentials can expire and scope can be re-evaluated. An always-on agent, by design, removes that checkpoint; "it's still running" becomes the default state rather than the exception. This is the same underlying containment gap already documented twice elsewhere in this workspace at different layers — a boundary that depends on the agent (or the product design) choosing to stop, rather than one that's structurally forced — just arriving now in a new, mainstream product shape rather than an internal eval harness or a sandbox escape. The multi-channel reach compounds it: `untrusted-content-is-data-not-instructions` already establishes that fetched/tool-returned content must be treated as inert data, not commands — an always-on agent listening on Slack/Teams/email simply has more inbound surfaces where that discipline has to hold, continuously, with no natural pause to re-check it.
+- Evidence: [Ledger: openai-devday-dots](ledger.md) (new product, single-vendor announcement, no incident data yet — hence "opinion," not "established"); reasoning extends [playbook: air-gap-governing-writes](#air-gap-governing-writes) and [playbook: untrusted-content-is-data-not-instructions](#untrusted-content-is-data-not-instructions) to a new product category.
+- References: [TechCrunch, "OpenAI launches Dots, its bubbly agentic avatar" (2026-09-29)](https://techcrunch.com/2026/09/29/openai-launches-dots-its-bubbly-agentic-avatar/), [CNBC, "OpenAI DevDay recap..." (2026-09-29)](https://www.cnbc.com/2026/09/29/openai-devday-2026-live-updates.html)
+- Last updated: 2026-10-03
+- Status: active
+
+### Summary
+
+- [TechCrunch, "OpenAI launches Dots, its bubbly agentic avatar" (2026-09-29)](https://techcrunch.com/2026/09/29/openai-launches-dots-its-bubbly-agentic-avatar/): the clearest independent description of what a Dot actually is — own cloud compute/browser, persistent, multi-channel reach — which is what this recommendation is reasoning about.
+- [CNBC, "OpenAI DevDay recap..." (2026-09-29)](https://www.cnbc.com/2026/09/29/openai-devday-2026-live-updates.html): independent corroboration of the launch and rollout details.
+
+### Bad example
+
+```markdown
+## Deployment
+
+Give the support-triage agent standing access to the ticketing system,
+the shared inbox, and the Slack workspace, and let it keep running
+indefinitely once turned on. Anyone in the #support channel can message
+it directly to ask it to do something.
+```
+
+No credential lifetime, no inbound-channel allowlist, no scheduled
+review — the agent is live and reachable from three different surfaces
+with no designed point at which its access gets re-checked.
+
+### Good example
+
+```markdown
+## Deployment
+
+The support-triage agent's ticketing-system and inbox credentials expire
+every 24 hours and are re-issued only after an automated scope check
+passes. It accepts task instructions only from the ticketing system and
+a named #support-agent-control channel — not the general #support
+channel, not email. Every unattended action it takes is logged to a
+reviewed-weekly audit feed.
+```
+
+Same capability, but with a forced credential-rotation boundary, an
+explicit inbound-channel allowlist, and a review cadence — the three
+things an always-on agent doesn't get for free.
