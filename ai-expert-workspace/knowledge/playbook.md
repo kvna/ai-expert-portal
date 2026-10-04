@@ -235,14 +235,15 @@ surface to the user, never as authorization to act.
 - Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
 - Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
 - References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
-- Status: active
+- Last updated: 2026-10-04
+- Status: active — reinforced, not revised: the 2026-09-29 DevDay update (same ledger entry) added computer-use and Codex's multi-agent/tool-search/compaction capabilities into this same Agents API rather than introducing a competing primitive set, which is further convergence, not a contradiction.
 
 ### Summary
 
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [InfoQ, "OpenAI DevDay 2026 Recap for Developers"](https://www.infoq.com/news/2026/10/openai-devday-2026/): independent corroboration that the Agents API's primitive set grew (computer use, Codex capabilities) rather than being replaced by a new framework.
 
 ### Bad example
 
@@ -369,6 +370,53 @@ once in a sandboxed dry run and confirm its actual behavior matches its
 SKILL.md before trusting it with a real task. Re-check periodically
 after install — a skill that was safe at install time can be poisoned
 later once it's earned trust.
+```
+
+## sandbox-untrusted-repos-before-agentic-git — Don't let an agent run its routine background git/shell commands against a repo whose `.git` directory you haven't reviewed; a project folder's own settings can hijack those commands before you type a single instruction
+
+- Explain it like I'm 10: Coding assistants poke around a project automatically the moment you open it — the equivalent of a helper glancing at a folder's "status" the second you hand it over. Researchers found that a project's own hidden settings file can rig that automatic glance so it secretly runs the attacker's program instead — like swapping a doorbell's wiring so it unlocks the door instead of ringing a chime. Since this happens during the agent's routine housekeeping, not something it asks your permission for, the usual "I'll approve risky actions" safety net never even gets a chance to fire.
+- Category: Agent sandboxing / tool execution
+- Confidence: emerging (a named, multi-outlet-corroborated vulnerability class across seven real agents with confirmed vendor patches for some variants; but this session could not read the primary disclosure directly due to a network restriction, and patch status for several of the affected agents is only confirmed as of early September, not independently reconfirmed since)
+- Recommendation: Treat "open this folder" as a privileged action for any coding agent, not a safe default — especially for a project that arrived with its `.git` directory intact (an archive, a synced drive, a USB stick, not a fresh `git clone`). Before pointing an agent at such a folder: (1) check whether the agent or its underlying git has a known config-driven execution sink (`core.fsmonitor` and equivalents) and whether your version is patched; (2) when in doubt, open the folder in a disposable container/VM first, or strip/ignore the repo's own git config before letting the agent run its background orientation commands; (3) don't assume a patch for one variant covers the whole class — Claude Code shipped a fix for the `core.fsmonitor` path while a second, different config-driven path in its own `ultrareview` command stayed open for six-plus weeks after. This is a different failure mode from this workspace's existing content-injection entries (`untrusted-content-is-data-not-instructions`, `vet-skill-provenance-and-runtime`): those are about text the agent reads and might be swayed by; this is about background shell subprocesses the agent runs on your behalf honoring a config file inside the very folder you just handed it, with no prompt or approval step at all.
+- Why: Manifold Security documented eight concrete findings across seven production coding agents (Claude Code, Codex, Cursor, Goose, Qwen Code, Grok Build, Hermes Agent) where a repo's own `.git/config` could name a program that the agent's routine background `git status`/`git diff` calls would execute, before any user instruction and outside normal approval flows. Patch status was uneven and partial even among vendors who did respond: one variant fixed, a second variant in the same product left open for over a month. A boundary that depends on "the agent will ask before doing anything risky" does not hold when the risky action is housekeeping the agent was never going to ask about.
+- Evidence: [Ledger: gitspawn-git-config-rce](ledger.md)
+- References: [Manifold Security, "GitSpawn: A Single Flaw Lets Untrusted Repos Run Code in Claude Code, Codex, Cursor, and Grok"](https://www.manifold.security/blog/ai-coding-agents-git-hijack), [Cloud Security Alliance, "GitSpawn: How a Git Config File Hijacks AI Coding Agents," 2026-09-03](https://labs.cloudsecurityalliance.org/research/csa-research-note-gitspawn-ai-coding-agent-rce-20260903-csa/), [GBHackers, "GitSpawn Flaw Enables Arbitrary Code Execution in Claude Code, Codex, Cursor and Grok," 2026-09-13](https://gbhackers.com/gitspawn-flaw-enables-arbitrary-code-execution/)
+- Last updated: 2026-10-04
+- Status: active — re-verify current patch status for Claude Code's `ultrareview` variant and the three fully-unpatched agents before treating this as resolved; last confirmed ~5 weeks before this entry.
+
+### Summary
+
+- [Manifold Security](https://www.manifold.security/blog/ai-coding-agents-git-hijack): the disclosing researcher's own writeup, naming the vulnerability class and documenting all eight findings and patch status across seven agents.
+- [Cloud Security Alliance, 2026-09-03](https://labs.cloudsecurityalliance.org/research/csa-research-note-gitspawn-ai-coding-agent-rce-20260903-csa/): independent security-industry research note explaining the `core.fsmonitor` mechanism in technical detail.
+- [GBHackers, 2026-09-13](https://gbhackers.com/gitspawn-flaw-enables-arbitrary-code-execution/): independent security-press corroboration, including the Claude Code `ultrareview` unpatched-variant detail.
+
+### Bad example
+
+```markdown
+## Repository setup
+
+When the user points you at a project folder, run `git status` and
+`git diff` right away to orient yourself on the current state before
+doing anything else.
+```
+
+Treats "orient yourself with git" as a safe, unconditional first step
+regardless of where the folder came from or whether its `.git/config`
+has been reviewed — exactly the assumption GitSpawn exploits.
+
+### Good example
+
+```markdown
+## Repository setup
+
+Before running any git command in a newly opened folder, check whether
+it arrived via a plain `git clone` (safe) or with its `.git` directory
+already intact from an external source — an archive, a synced drive, a
+USB stick (review first). For the latter, either inspect `.git/config`
+for unexpected settings like `core.fsmonitor` first, or run initial
+orientation commands with git config sinks disabled
+(`git -c core.fsmonitor=false status`), or do first contact inside a
+disposable container.
 ```
 
 ## measure-before-compacting — Don't summarize a long agent context by default; measure cost and recall first, and cap tool-output size before you ever reach for summarization
