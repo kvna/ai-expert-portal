@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Harden your own machine against the GitSpawn-class git-config trust bypass
+
+- Explain it like I'm 10: Before you let your AI coding helper peek inside a new project folder, do a quick safety check first — like checking a found USB stick for a hidden auto-run program before plugging it in, instead of just trusting it because it looks like a normal drive.
+- Status: proposed
+- Based on: [Ledger: gitspawn-git-config-agent-rce](../knowledge/ledger.md#gitspawn-git-config-agent-rce) (disclosed 2026-09-01/02, added 2026-10-05); [Playbook: vet-native-subprocess-trust-boundary](../knowledge/playbook.md#vet-native-subprocess-trust-boundary)
+- Objective: Apply the GitSpawn finding directly to your own daily Claude Code / coding-agent setup, rather than just reading about it — confirm you're on a patched version, disable the specific risky setting, and build the habit of checking an unfamiliar repo's `.git/config` before opening it in an agent.
+- Why now: This vulnerability class concerns the exact tool this workspace runs on (Claude Code), has a one-line mitigation, and at least one Claude Code variant was reported still unpatched as of the researchers' last retest — this is a same-day, low-cost check, not a someday project.
+- Prerequisites: Local shell access to the machine(s) you run Claude Code (or another affected agent) on; 15 minutes.
+- Deliverable: A short note (a few lines is enough) recording: your current Claude Code version and whether it's past the patched release, the output of `git config --global --get core.fsmonitor` before and after hardening, and a one-line check script or alias you can run against any new/untrusted repo before opening it in an agent.
+- Estimate: 30–60 min
+- Steps: (1) Check your installed Claude Code (or other agent) version against the patched releases named in the ledger entry; update if behind. (2) Run `git config --global core.fsmonitor false` (and check for any per-repo override). (3) Write a one-line check (e.g. `git config --list --file .git/config | grep -iE 'fsmonitor|hooksPath'`) you can run against any repo received as a ZIP/USB/shared-drive copy before opening it in an agent. (4) Note which of your other CLIs the agent shells out to (npm, make, pre-commit) might have an equivalent auto-run setting worth checking.
+- Acceptance tests: `core.fsmonitor` is confirmed disabled globally; the agent version is confirmed current; the check script actually runs against a real repo and produces output.
+- Reflection: What other "routine, read-only" commands does your agent run automatically on startup that you've never actually audited? Does your current setup distinguish "trusted" from "just-downloaded" repositories in any enforced way, or only by habit?
+- Optional extension: Turn the one-line check into a pre-flight script invoked automatically (a shell function, a git hook template, or a wrapper around however you launch the agent) so the check happens by default rather than by memory — a small, reusable asset per the leverage lens, not a one-off manual step.
+
