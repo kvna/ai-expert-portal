@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit this workspace's own instruction files and consolidate onto AGENTS.md
+
+- Explain it like I'm 10: Two cheap, real checkups just became available for the instruction files that run this very AI helper: one that points out old, stale wording, and one about writing the instructions in a single file that more than one AI tool can read instead of two separate copies. This exercise is just: actually run those checkups on this workspace's own files and see what they find.
+- Status: proposed
+- Based on: [Ledger: claude-code-prompt-audit](../knowledge/ledger.md#claude-code-prompt-audit) (Claude Code `/doctor prompt-audit`, 2026-09-25) and [Ledger: claude-code-agents-md-support](../knowledge/ledger.md#claude-code-agents-md-support) (Claude Code AGENTS.md support, confirmed 2026-09-23)
+- Objective: Get a real, evidence-based read on whether this workspace's own governing files (`.claude/agents/ai-expert.md`, its Codex counterpart, and any skills) carry stale prompting patterns, and whether consolidating the Claude/Codex instruction pair onto a shared `AGENTS.md` is actually worthwhile here — not just a hypothetically nice idea.
+- Why now: both tools shipped in the last two weeks and are directly applicable to this exact workspace's own cross-platform-portfolio structure; this is the cheapest possible way to test two of this scan's findings against reality instead of filing them away unused.
+- Prerequisites: Claude Code v2.1.283 or later (for `/doctor prompt-audit`); read access to this workspace's Claude and Codex agent definitions.
+- Deliverable: A short Markdown note recording (a) the `/doctor prompt-audit` findings against the Claude agent definition and any skills, and (b) a one-paragraph decision on whether to consolidate the Claude/Codex instruction pair onto `AGENTS.md`, with reasoning either way.
+- Estimate: 30–60 min
+- Steps: (1) Run `/doctor prompt-audit` against this workspace's Claude Code configuration; (2) review the findings and note which, if any, warrant a proposal under AIExpert's own "Improving AIExpert" process (AIExpert cannot apply them itself — this is a user-run check, not a self-edit); (3) compare the current Claude and Codex agent-definition files side by side and decide whether their shared content is substantial enough to justify an `AGENTS.md` consolidation; (4) if yes, draft (don't apply) what the consolidated file would look like.
+- Acceptance tests: `/doctor prompt-audit` actually ran and its output is recorded verbatim (not paraphrased) in the deliverable; the AGENTS.md decision states a clear yes/no with reasoning, not just "worth considering."
+- Reflection: Did the prompt audit find anything AIExpert's own regression-testing discipline (`instructions-are-not-controls`) would have missed, or vice versa? If choosing not to consolidate onto AGENTS.md, what specifically made the two files different enough to keep separate?
+- Optional extension: If a stale pattern is found in the Claude agent definition, draft the proposal (per the "Improving AIExpert" process) rather than just noting it, so the finding actually compounds into a concrete, approvable change.
+
