@@ -233,9 +233,9 @@ surface to the user, never as authorization to act.
 - Confidence: emerging
 - Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
 - Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-spec-stateless-and-aaif-governance](ledger.md) (2026-07-28 breaking spec change, added 2026-10-08 — direct proof the "re-verify before betting on specifics" caution below was warranted); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [MCP spec changelog, protocol version 2026-07-28](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/changelog.mdx)
+- Last updated: 2026-10-08
 - Status: active
 
 ### Summary
@@ -243,6 +243,11 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [MCP spec changelog, protocol version 2026-07-28](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/changelog.mdx): primary-source proof that MCP's own wire protocol changed in a breaking way (removed sessions/handshake, added `server/discover`, moved Tasks to an extension) within months of the previous entries being written — added 2026-10-08.
+
+### Update (2026-10-08)
+
+The "re-verify before betting on specifics" half of this recommendation is no longer hypothetical caution — it already happened. MCP shipped a breaking protocol change (stateless core, removed handshake, Tasks moved to an extension) on 2026-07-28, and separately moved to fuller multi-vendor governance (Linux Foundation's Agentic AI Foundation) with its own certification program (MCPA, launched 2026-09-13/14). See [Ledger: mcp-spec-stateless-and-aaif-governance](ledger.md) for the full, primary-source-verified detail. Practical update to the recommendation: before relying on any existing MCP integration written against an earlier protocol version, check it against `2026-07-28` specifically (session handling and the `initialize` handshake are gone) rather than assuming "MCP support" is a stable, version-independent fact about a tool.
 
 ### Bad example
 
@@ -264,6 +269,56 @@ Connect to the CRM, ticketing system, wiki, and calendar via MCP
 servers rather than bespoke clients. Before adding a new integration,
 check the current MCP docs for that specific server — don't assume a
 setup that worked last quarter still matches the current spec.
+```
+
+## enforce-agent-governance-with-managed-settings — When your coding agent's vendor ships admin-enforced controls (allowed providers, model allow/deny lists, a fetch/network kill switch), turn them on as the actual boundary — don't keep relying on written policy alone
+
+- Explain it like I'm 10: Telling a babysitter "please don't let the kids watch anything scary" relies entirely on the babysitter remembering and agreeing. Setting parental controls on the TV that physically block certain channels works whether or not the babysitter remembers, agrees, or is even paying attention that day. For a long time, the only option for AI coding assistants was the "please don't" instruction — written in a CLAUDE.md file or a company policy doc. Now the tool itself ships an actual parental-control switch: an admin can lock which AI providers it's allowed to talk to, which specific models it's allowed to use, and whether it's allowed to fetch random web pages at all — and the assistant can't talk its way around any of that, because the switch lives outside the conversation entirely.
+- Category: Reliable agent design — governance / deployment
+- Confidence: emerging (one vendor has shipped and primary-source-verified this; not yet observed as a cross-vendor pattern the way managed agent-lifecycle primitives were)
+- Recommendation: When deploying an agentic coding tool (Claude Code today; check for the equivalent in Codex, Gemini CLI, GitHub Copilot Agent, etc. as they ship) at an organization, configure its admin/managed settings — provider allowlists, model allow/deny lists, and a kill switch for tools that fetch arbitrary external content — as the actual enforcement boundary. Treat a written policy ("only use approved models," "don't let the agent browse the open internet") as a requirements document for that configuration, never as the control itself. Before signing off on a rollout, verify the setting is actually enforced (reproduce the block, don't just read the docs) — this workspace's own `mcp-spec-stateless-and-aaif-governance`-adjacent research found two of these very features had startup-check bugs that let the enforced list be bypassed shortly after shipping, fixed only in a follow-up point release.
+- Why: This is the direct, shipped version of this workspace's long-standing `instructions-are-not-controls` principle — a prompt-stated boundary ("you have no internet access," "only use these models") held up only as well as the model's own compliance, which the Anthropic eval-harness incidents showed can fail the moment the infrastructure doesn't also enforce it. A managed setting that the agent cannot read, argue with, or override in conversation closes exactly that gap, for exactly the governance questions (which backend, which model, can it reach the open internet) a regulated or enterprise deployment review would otherwise have to take on faith.
+- Evidence: [Ledger: claude-code-managed-governance-settings](ledger.md) (added 2026-10-08, verified directly against the primary changelog and a live installed version)
+- References: [anthropics/claude-code CHANGELOG.md](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md), [npm registry, `@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code)
+- Last updated: 2026-10-08
+- Status: active
+
+### Summary
+
+- [anthropics/claude-code CHANGELOG.md](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md): primary source documenting `allowedProviders`, the enforced model allow/deny list (and the bugs that initially let it be bypassed on Bedrock/Vertex), `CLAUDE_CODE_DISABLE_WEB_FETCH`, and the `/status`/`doctor` warning for silently-overridden sandbox settings.
+- [npm registry, `@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code): confirms the version carrying these features is the live, currently-published release, not a draft or beta channel.
+
+### Bad example
+
+```markdown
+## Model and tool policy
+
+Only use models our security team has approved, and don't fetch
+content from the open internet unless the task clearly requires it.
+```
+
+A policy stated only in the agent's own instructions — the agent has to
+remember it, interpret "clearly requires it" the same way every time, and
+nothing stops a differently-configured session, a different user, or a
+later instruction edit from silently dropping it.
+
+### Good example
+
+```markdown
+## Model and tool policy
+
+Written policy (for humans configuring this deployment): only
+claude-opus-5-5 and claude-sonnet-5-5 are approved; WebFetch must stay
+disabled for this team.
+
+Enforcement (actually applied via managed settings, not this file):
+  "allowedProviders": ["anthropicApi"],
+  "deniedModels": ["*"], "allowedModels": ["claude-opus-5-5", "claude-sonnet-5-5"],
+  CLAUDE_CODE_DISABLE_WEB_FETCH=1
+
+Verified: ran `claude doctor` and attempted a denied-model switch and a
+WebFetch call in a test session; both were refused by the managed
+setting, not merely discouraged by this file.
 ```
 
 ## agent-skills-open-standard-conformance — Build and check every skill against the open agentskills.io spec, not just whichever platform you happen to be using
@@ -327,10 +382,14 @@ one it was written on.
 - Confidence: emerging (real, multi-outlet-corroborated incidents at meaningful scale; but the headline statistics come from two security vendors' own research/telemetry, not an independently reproduced count, and this session could not read the primary sources directly due to a network restriction — see the ledger entry's evidence-gathering note)
 - Recommendation: Treat every third-party AI skill/add-on (whether for this workspace's own Claude/Codex setup or any agent built here) as untrusted supply-chain input until checked on two axes, not one: (1) **provenance** — does it come from a verified publisher, not just a plausible-sounding name or a vendor-impersonating listing, and does its install source (registry, repo) show a real ownership history rather than a recently-cloned high-download-count clone; (2) **runtime behavior**, not just static text — read the current SKILL.md, but also confirm (via a sandboxed dry run, a runtime scanner, or at minimum re-reading it periodically after install) that what it actually does matches what it says, since the documented attack pattern here is to ship a clean skill, let it earn trust and downloads, and inject the malicious instruction later. A high install count is social proof of popularity, not of safety — it was the attacker's own goal in the confirmed campaign this entry is based on. This extends, and does not replace, the existing `agent-skills-open-standard-conformance` entry: spec conformance tells you a skill is well-formed, not that it is safe or still doing what it originally did.
 - Why: A confirmed, multi-outlet-corroborated campaign cloned trusted skills on Vercel's `skills.sh` registry, let the clones accumulate over 1.7 million aggregate installs, and only then injected instructions to exfiltrate SSH keys, cloud credentials, and other secrets from the installing machine — a static, install-time-only review would have found nothing wrong. Separately, an industry scan reported over 17,800 public AI add-ons (6.7M installs) pulling their real instructions from unverified external sources, including some directly impersonating Anthropic and OpenAI. Both findings show the same gap this workspace's other containment-focused entries already establish for agent sandboxes and browser content (`air-gap-governing-writes`, `untrusted-content-is-data-not-instructions`) now applies to the skill supply chain itself: a boundary or trust claim that is only checked once, at a point in time, is not a durable control.
-- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md)
-- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)
-- Last updated: 2026-09-17
+- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md) (includes the 2026-10-08 rescan update below)
+- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/), [Unit 42 via Forkast News, "Unit 42 exposes first AI agent supply chain attack"](https://forkast.news/unit-42-exposes-first-ai-agent-supply-chain-attack-malicious-skills-hijack-authority-execute-solana-pump-and-dump/), [Cloud Security Alliance, "Poisoned Skills: AI Agent Marketplace Supply Chain Attacks," 2026-06-24](https://labs.cloudsecurityalliance.org/research/csa-research-note-ai-skill-supply-chain-attacks-20260624-csa/)
+- Last updated: 2026-10-08
 - Status: active
+
+### Update (2026-10-08) — a new technique specifically defeats the "static/code scanning" half of this recommendation
+
+Independent research (Unit 42, Cloud Security Alliance, confirmed on a second registry — OpenClaw's ClawHub, not just Vercel's skills.sh) found malicious skills written as pure natural-language "compliance rules" text with no executable code at all, which evaded scanners built to catch malicious code in CSA's own testing. A separate case bypassed two scanners (ClawScan, VirusTotal) simply by padding a file past their size threshold. An OpenSSF Community Day EU talk (2026-10-06) additionally found that none of the marketplaces it examined perform deduplication/similarity checks at ingest — so a clone-then-poison campaign (the original finding below) wouldn't even be caught by the registry noticing the clone. **Sharper recommendation:** don't just "read the SKILL.md" or run a code scanner — a skill's malicious instruction can be plain English that looks like ordinary policy text, invisible to any tool looking for executable payloads. The runtime/behavioral check (does what it does match what it claims, watched live) is now the load-bearing half of this recommendation, not a supplement to static review. See [Ledger: agent-skill-supply-chain-attacks](ledger.md) for full detail and the evidence-gathering caveat (WebFetch to primary sources was blocked this session; this rests on WebSearch's secondary synthesis).
 
 ### Summary
 
@@ -426,10 +485,14 @@ recall loss on a specific fact. Record which trigger applied.
 - Confidence: established (multiple independent research groups and vendors; a real, patched vulnerability; a national security agency's structural assessment)
 - Recommendation: For any agent that fetches or processes content it doesn't fully control (web pages, tool output, images, files from an untrusted source), architect on the assumption that a well-trained content-classifier will sometimes miss an injected instruction, and that attackers will look for bypasses at a different layer entirely (e.g., a trust-boundary bug, not the content itself). Pair detection with least-privilege scoping (don't give the agent authority to take high-stakes actions purely off content it just read) and explicit confirmation gates for consequential actions triggered by untrusted content. Don't treat "we have a prompt-injection classifier" as equivalent to "this is solved."
 - Why: Anthropic's own layered defense for Claude in Chrome — RL training, a content classifier scanning all untrusted input, action verification, continuous red-teaming — still had a 1% success rate against an adaptive attacker by Anthropic's own admission, and was separately bypassed entirely (not degraded, bypassed) by the ShadowPrompt chain, which exploited a subdomain trust bug rather than the content-scanning layer the defense was built around. The UK NCSC's position — that there's no inherent way to distinguish data from instructions in current architectures — is a structural claim, not a solvable bug, so defense has to assume detection will sometimes fail rather than treat it as the whole plan.
-- Evidence: [Ledger: browser-agent-prompt-injection](ledger.md); reinforces and extends [Playbook: instructions-are-not-controls](#instructions-are-not-controls) (a different failure mode — untrusted data vs. an asserted-but-unenforced instruction — same underlying discipline of not trusting a single natural-language or classifier layer as the actual control)
-- References: [Anthropic, "Mitigating the risk of prompt injections in browser use," 2025-11-24](https://www.anthropic.com/news/prompt-injection-defenses), [Brave, "Agentic Browser Security: Indirect Prompt Injection in Perplexity Comet," 2025-08-20](https://brave.com/blog/comet-prompt-injection/), [The Hacker News, "Claude Extension Flaw Enabled Zero-Click XSS Prompt Injection via Any Website," 2026-03-26](https://thehackernews.com/2026/03/claude-extension-flaw-enabled-zero.html)
-- Last updated: 2026-09-16
+- Evidence: [Ledger: browser-agent-prompt-injection](ledger.md); [Ledger: comment-and-control-cicd-prompt-injection](ledger.md) (added 2026-10-08 — the CI/CD coding-agent variant of the same failure mode); reinforces and extends [Playbook: instructions-are-not-controls](#instructions-are-not-controls) (a different failure mode — untrusted data vs. an asserted-but-unenforced instruction — same underlying discipline of not trusting a single natural-language or classifier layer as the actual control)
+- References: [Anthropic, "Mitigating the risk of prompt injections in browser use," 2025-11-24](https://www.anthropic.com/news/prompt-injection-defenses), [Brave, "Agentic Browser Security: Indirect Prompt Injection in Perplexity Comet," 2025-08-20](https://brave.com/blog/comet-prompt-injection/), [The Hacker News, "Claude Extension Flaw Enabled Zero-Click XSS Prompt Injection via Any Website," 2026-03-26](https://thehackernews.com/2026/03/claude-extension-flaw-enabled-zero.html), [Repello AI, "Comment and Control: How One Prompt Injection Hit Claude Code, Gemini CLI, and Copilot Agent"](https://repello.ai/blog/comment-and-control-claude-code-gemini-copilot-prompt-injection)
+- Last updated: 2026-10-08
 - Status: active
+
+### Update (2026-10-08) — the same failure mode, in a CI/CD coding agent instead of a browser
+
+A cross-vendor prompt-injection class ("Comment and Control," disclosed ~April 2026) showed Claude Code Security Review, Gemini CLI Action, and GitHub Copilot Agent could each be hijacked by ordinary GitHub PR titles, issue bodies, or comments when running inside GitHub Actions — leaking API keys and tokens into public comments/logs in each case. This is the identical lesson (untrusted content read by an agent is not automatically safe to act on) in a new, highly self-relevant channel: a coding agent triggered by, and reading, text from a CI pipeline rather than a browser session. **Self-relevant action item (not yet done — flagged for a future pass):** audit this very workspace's own GitHub PR-activity subscription for the same exposure — confirm no secret this session can read is reachable from content it might echo into a PR comment or Action log. See [Ledger: comment-and-control-cicd-prompt-injection](ledger.md) for full detail and the evidence-gathering caveat (WebFetch to primary/press sources was blocked this session; this rests on WebSearch's secondary synthesis, and the exact disclosure date is not independently confirmed).
 
 ### Summary
 
