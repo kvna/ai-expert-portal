@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a reusable model/effort-tier cost-quality harness
+
+- Explain it like I'm 10: Instead of just trusting the menu's "biggest size = best value" claim, this exercise builds a little reusable checklist you run every time a new AI model comes out: try the cheap size, try the medium size, try "extra effort," write down what each one actually cost and how good the answer actually was — then you'll have real numbers instead of a guess, and you can reuse the same checklist next time too.
+- Status: proposed
+- Based on: [Ledger: claude-5-5-family](../knowledge/ledger.md#claude-5-5-family); playbook: [benchmark-at-the-effort-tier-you-will-use](../knowledge/playbook.md#benchmark-at-the-effort-tier-you-will-use)
+- Objective: Build a small, reusable script/checklist that runs one real task of yours against several model/effort-tier combinations and records cost and a quality judgment side by side — a durable asset you can rerun on every future model release, not a one-off comparison.
+- Why now: Anthropic's own Sonnet 5.5 release notes show a cheaper, lower-effort configuration beating a prior flagship's best score at roughly a tenth of the cost, and a higher effort setting scoring *worse* than a lower one on a specific benchmark — vendor benchmark tables alone won't tell you which pattern holds for your own task, and this keeps happening with every release.
+- Prerequisites: Claude Code (or equivalent) access to at least two model/effort configurations; one real, repeatable task of yours (a coding task, a research-summary task, etc.) with a way to judge output quality.
+- Deliverable: A small reusable harness (a script or a documented manual checklist) that, given a task, runs it at 3+ model/effort tiers, records token cost and a 1-5 quality score for each, and outputs a short comparison table — plus one filled-in run against a real task of yours.
+- Estimate: half day
+- Steps: (1) Pick one real, repeatable task with a way to judge "good enough" output; (2) run it at the cheapest tier/lowest effort, a middle tier, and the highest tier/effort; (3) record actual token cost (or $ cost) and a quality score for each; (4) write the harness so the next model release can reuse the same steps without re-deriving them; (5) note any result that surprised you (e.g., higher effort scoring worse).
+- Acceptance tests: The harness runs on a second, different task without modification; the comparison table shows real cost numbers, not estimates; at least one tier/effort combination was actually the cheapest option that met the quality bar.
+- Reflection: Did the cheapest tier that met your quality bar match what the vendor's own benchmark table would have predicted? Would you have defaulted to a more expensive tier if you hadn't measured?
+- Optional extension: Wire the harness into a CI/pre-deploy check that flags when a new model version changes the cost-optimal tier for a given agent — directly reusable for any Terraform/Azure cost-governance habit of "measure before you provision the bigger SKU."
+
