@@ -468,3 +468,93 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## unify-cross-tool-instructions-via-agents-md — Write one shared AGENTS.md for project instructions, not a separate file per coding assistant
+
+- Explain it like I'm 10: If you use more than one AI coding helper on the same project, you used to have to write the "how this project works" note once per helper, in each helper's own preferred filename — double the writing, double the chance they drift apart and disagree. Now the two biggest helpers (and dozens of smaller ones) will read the exact same note if you name it AGENTS.md. Write it once, point every helper at it, and you're done.
+- Category: Agent/skill factories
+- Confidence: established (shipped, documented product behavior from two independent competing vendors, corroborated by multiple independent outlets)
+- Recommendation: For any project used with more than one AI coding assistant, write project instructions once as `AGENTS.md` at the repo root rather than maintaining separate CLAUDE.md/AGENTS.md/other-vendor files. If a tool needs vendor-specific additions on top of the shared file, add a thin wrapper that imports the shared file (Claude Code: a `CLAUDE.md` containing `@AGENTS.md`, plus any Claude-only instructions below the import) rather than forking the whole document. Before relying on this for any given tool/session, check that tool's current docs for exact precedence rules (e.g., Claude Code only reads AGENTS.md directly when no CLAUDE.md exists on the path, unless you explicitly set it to load both) — don't assume "it reads AGENTS.md" means "it always reads AGENTS.md no matter what else is present."
+- Why: AGENTS.md started as an OpenAI/Codex-ecosystem convention and is now governed by the vendor-neutral Agentic AI Foundation; Claude Code adopting it natively (v2.1.277, 2026-09-18) means the two largest coding-agent ecosystems now read the same file by default, on top of the ~60,000+ repos reportedly already using it for other tools. Maintaining one shared file instead of N vendor-specific ones is a durable, near-zero-marginal-cost asset exactly matching this workspace's "cross-platform agent portfolio" leverage principle — and it directly suggests revisiting this workspace's own dual Claude/Codex AIExpert files to see whether they could share more via the same mechanism.
+- Evidence: [Ledger: claude-code-agents-md-support](ledger.md)
+- References: [Anthropic, Claude Code docs, "How Claude remembers your project" (AGENTS.md section)](https://code.claude.com/docs/en/memory), [CryptoBriefing, "Anthropic updates Claude Code to support AGENTS.md file, joining cross-tool AI coding standard"](https://cryptobriefing.com/anthropic-claude-code-agents-md-support/), [letsdatascience.com, "Claude Code Adds AGENTS.md Project-Instruction Fallback"](https://letsdatascience.com/news/claude-code-adds-agentsmd-project-instruction-fallback-7995fb3f), [dev.classmethod.jp, "Claude Code v2.1.277 to v2.1.278 Major Updates"](https://dev.classmethod.jp/en/articles/20260919-cc-updates-v2-1-278/)
+- Last updated: 2026-10-10
+- Status: active
+
+### Summary
+
+- [Anthropic, Claude Code docs, "How Claude remembers your project" (AGENTS.md section)](https://code.claude.com/docs/en/memory): the primary, authoritative reference for exactly when Claude Code reads AGENTS.md, the four configurable modes, and known platform gaps.
+- [CryptoBriefing, "Anthropic updates Claude Code to support AGENTS.md file, joining cross-tool AI coding standard"](https://cryptobriefing.com/anthropic-claude-code-agents-md-support/): independent confirmation of the version/date and the cross-tool-standardization framing.
+- [letsdatascience.com, "Claude Code Adds AGENTS.md Project-Instruction Fallback"](https://letsdatascience.com/news/claude-code-adds-agentsmd-project-instruction-fallback-7995fb3f): independent corroboration of the fallback behavior and /config toggle.
+- [dev.classmethod.jp, "Claude Code v2.1.277 to v2.1.278 Major Updates"](https://dev.classmethod.jp/en/articles/20260919-cc-updates-v2-1-278/): independent technical walkthrough of the same release.
+
+### Bad example
+
+```markdown
+project/
+  CLAUDE.md       # written for Claude, slowly drifts out of date
+  AGENTS.md       # written separately for Codex, has its own stale rules
+  .cursorrules    # a third copy, written months ago, never updated since
+```
+
+Three files claiming to describe the same project, maintained by hand,
+already disagreeing with each other about which test command to run.
+
+### Good example
+
+```markdown
+project/
+  AGENTS.md       # the one shared source of truth every tool reads
+  CLAUDE.md       # @AGENTS.md
+                  # (plus only genuinely Claude-specific instructions below)
+```
+
+One file to keep accurate; Claude Code reads it via the import (or directly,
+if no CLAUDE.md is present and the Project-instructions mode allows it), and
+every other AGENTS.md-aware tool reads it natively with no extra work.
+
+## cap-subagent-fan-out-by-default — Don't assume subagents can freely spawn nested subagents; respect (and only deliberately override) default depth/concurrency caps
+
+- Explain it like I'm 10: Imagine telling one helper "go get this done," and that helper hires three more helpers, each of whom hires three more — pretty soon you've got an army you never approved and a bill nobody budgeted for. The tool AIExpert itself runs on now stops that by default: a helper's helpers normally can't hire further helpers of their own, and no more than 20 can run at once. That's a safety rail, not a bug — don't just crank it back up because a deeper chain seems convenient.
+- Category: Agent/skill factories
+- Confidence: emerging (a real, shipped, primary-sourced change; no independent commentary found yet on its real-world impact)
+- Recommendation: When designing a multi-agent workflow (including AIExpert's own use of subagents for research/delegation), design around a default spawn depth of 1 (a top-level agent may spawn subagents, but those subagents should not need to spawn their own by default) and a concurrency ceiling around 20. If a design genuinely needs deeper nesting or higher concurrency, treat that as a deliberate, justified override (e.g. `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`, `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`), not the default assumption — and re-check the current SDK changelog before relying on either number, since these are plain integer defaults that could change again without an announcement.
+- Why: Recursive subagent fan-out (helpers spawning helpers spawning helpers) is a direct cost and control-loss risk — the same underlying failure mode as runaway cloud auto-scaling without a hard cap. Anthropic shipping this as a *default*, not just an optional guardrail, is a signal worth treating as current best practice for this workspace's own agent-orchestration design, even though no independent source has yet analyzed why.
+- Evidence: [Ledger: claude-agent-sdk-subagent-safety-limits](ledger.md)
+- References: [github.com/anthropics/claude-agent-sdk-typescript, CHANGELOG.md](https://github.com/anthropics/claude-agent-sdk-typescript/blob/main/CHANGELOG.md)
+- Last updated: 2026-10-10
+- Status: active
+
+### Summary
+
+- [github.com/anthropics/claude-agent-sdk-typescript, CHANGELOG.md](https://github.com/anthropics/claude-agent-sdk-typescript/blob/main/CHANGELOG.md): the sole source — Anthropic's own changelog documenting the concurrency cap (20, default) and the spawn-depth cap (lowered from 5 to 1, default), each with its environment-variable override.
+
+### Bad example
+
+```markdown
+## Self-improvement
+
+When a task is complex, delegate freely: have your subagent break the
+work down and spawn further subagents of its own wherever it judges
+that helpful, with no limit on how deep that chain goes or how many
+run at once.
+```
+
+Invites unbounded recursive fan-out — cost and behavior become
+unpredictable, and nothing here matches the platform's own default
+safety rail.
+
+### Good example
+
+```markdown
+## Self-improvement
+
+Delegate to a subagent for one level of parallel/independent work at
+a time. Do not have a subagent spawn further subagents by default —
+if a task genuinely needs deeper delegation, say so explicitly and
+treat it as a deliberate override, not the normal path, and keep an
+eye on how many run concurrently.
+```
+
+Matches the platform's own default (depth 1, concurrency ~20) instead of
+fighting it, and treats deeper nesting as an explicit, justified choice.
