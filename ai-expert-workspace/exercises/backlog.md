@@ -46,5 +46,20 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Steps: (1) Read the OpenAI Agents API quickstart; (2) run one multi-turn task (e.g., a 3-step coding task requiring at least one intentional interruption/resume) through it; (3) run the same task through your existing harness; (4) note where behavior diverged, especially around recovery and compaction; (5) fill in the comparison table.
 - Acceptance tests: The task actually ran end-to-end on at least one platform; the comparison table cites observed behavior, not just documentation claims.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
-- Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
+- Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents. Target the 2026-07-28 MCP spec revision (stateless sessions), not an earlier assumption of the protocol.
+
+## EX-004 — Build a read-only watcher subagent for one of AIExpert's own workflows
+
+- Explain it like I'm 10: Like adding a quiet helper whose only job is to watch you do your homework and say "hey, did you check that one?" — without being allowed to pick up a pencil and change anything themselves.
+- Status: proposed
+- Based on: [Ledger: claude-code-watcher-agent-and-mods](../knowledge/ledger.md#2026-10-claude-code-watcher-agent-and-mods); playbook: watcher-subagent-pattern
+- Objective: Build and test a minimal, reusable "watcher" subagent pattern — a non-acting observer with read-only tools that reviews a primary agent's output and flags misses — as a template this workspace can reuse for future multi-agent exercises, not just a one-off.
+- Why now: Anthropic just shipped exactly this pattern as a first-party, built-in Claude Code feature ("You should know," Oct 2026), which is strong validation that it's worth having a hands-on template ready rather than re-deriving it from scratch next time it's needed.
+- Prerequisites: Claude Code (or Codex) with subagent/Agent-tool support; one existing task or workflow in this workspace with a clear primary-agent output to review (e.g., a prior scout-mode research pass, or a code change).
+- Deliverable: A reusable watcher-subagent prompt template (Markdown), read-only-tool-scoped, plus one worked example: running it against a real AIExpert output (e.g., this session's own ledger/playbook additions) and recording what it flagged, if anything.
+- Estimate: 30–60 min
+- Steps: (1) Draft a watcher-subagent prompt that takes a transcript/diff and returns only a bulleted list of possible misses, with no tool access beyond Read/Grep/Glob; (2) run it once against a real primary-agent output already in this workspace; (3) record what it caught (if anything) and what it missed, by comparing against a human (the user's) review of the same output; (4) save the template under `exercises/` for reuse.
+- Acceptance tests: The watcher subagent runs with genuinely read-only tool access (verified, not assumed); it produces at least one concrete, specific flag (not a generic "looks good"); the template is saved somewhere reusable, not only run once and discarded.
+- Reflection: Did the watcher catch anything a single self-review pass would have missed? Is a non-acting watcher actually cheaper than just re-reading your own output more carefully, or does its value come specifically from being a separate context/perspective?
+- Optional extension: Wire the watcher into an actual AIExpert scouting pass (like this one) as a standing step — have it review the ledger/playbook entries before they're committed, scoped to flag schema violations (missing "Explain it like I'm 10," missing References) rather than factual correctness.
 
