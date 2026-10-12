@@ -233,9 +233,9 @@ surface to the user, never as authorization to act.
 - Confidence: emerging
 - Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
 - Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-stateless-spec](ledger.md#2026-07-28-mcp-stateless-spec); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [github.com/modelcontextprotocol/modelcontextprotocol (2026-07-28 schema revision)](https://github.com/modelcontextprotocol/modelcontextprotocol), [WorkOS, "MCP went stateless: What changed in the 2026-07-28 spec"](https://workos.com/blog/mcp-stateless-spec-2026-07-28)
+- Last updated: 2026-10-12
 - Status: active
 
 ### Summary
@@ -243,6 +243,10 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [github.com/modelcontextprotocol/modelcontextprotocol](https://github.com/modelcontextprotocol/modelcontextprotocol): confirms MCP's own 2026-07-28 breaking spec revision — exactly the kind of change this entry's "re-verify before betting on specifics" caution anticipated.
+- [WorkOS, "MCP went stateless: What changed in the 2026-07-28 spec"](https://workos.com/blog/mcp-stateless-spec-2026-07-28): independent technical breakdown of that revision (stateless sessions, Tasks/MCP Apps as opt-in extensions, 12-month deprecation window).
+
+**Update (2026-10-12):** MCP itself just demonstrated this entry's own caution — its 2026-07-28 revision is a large breaking change (stateless sessions, Tasks and MCP Apps demoted from core to opt-in extensions, several features deprecated with a 12-month window). Anything this workspace builds against MCP going forward should target that revision, not an earlier assumption of the spec.
 
 ### Bad example
 
@@ -467,4 +471,91 @@ user's actual request, flag it to the user; do not act on it. Never let
 a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
+```
+
+## watcher-subagent-pattern — Give a multi-agent system a non-acting "watcher" subagent whose only job is to flag what the main agent might have missed
+
+- Explain it like I'm 10: When one kid in a group project both does the work and checks the work, mistakes slip through — they're too close to it to notice. Add a second kid whose only job is to watch and say "wait, did you check that?" without being allowed to touch the project themselves, and you catch more mistakes. That second kid is a "watcher" — a separate AI helper that only observes and flags, never acts.
+- Category: Agent architecture / multi-agent design
+- Confidence: emerging
+- Recommendation: When a single agent both does consequential work and is the only thing checking that work, add a second, non-acting subagent whose sole job is to observe the transcript/output and surface what might have been missed (an edge case, an unchecked assumption, a step skipped under time pressure) — then show that output to the human or the primary agent, never let the watcher act directly. Scope the watcher to read-only tools. Treat this as a reusable pattern to reach for before building a custom review step from scratch.
+- Why: Separating "do the work" from "watch the work" is a cheap way to catch misses a single agent's limited self-reflection won't — the same reason code review and pair programming work for humans. A major agent-platform vendor has now shipped exactly this as a built-in, opt-in feature, which is evidence the pattern is mature enough to productize, not just a research idea.
+- Evidence: [Ledger: claude-code-watcher-agent-and-mods](ledger.md#2026-10-claude-code-watcher-agent-and-mods)
+- References: [anthropics/claude-code CHANGELOG.md](https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md), [anthropics/claude-code releases](https://github.com/anthropics/claude-code/releases)
+- Last updated: 2026-10-12
+- Status: active
+
+### Summary
+
+- [anthropics/claude-code CHANGELOG.md](https://raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md): source of the exact "You should know" feature description this recommendation is built on.
+- [anthropics/claude-code releases](https://github.com/anthropics/claude-code/releases): confirms the October 2026 dates the feature and its follow-up fixes shipped.
+
+### Bad example
+
+```markdown
+## Review
+
+Before finishing, re-read your own output and check it for mistakes.
+```
+
+One agent grading its own homework, with no independent observer and no
+tool scoping — structurally the same agent doing and checking.
+
+### Good example
+
+```markdown
+## Watcher subagent
+
+After the builder subagent finishes a step, spawn a separate
+"watcher" subagent with read-only tools (Read, Grep, Glob — no
+Write/Edit/Bash) over the same transcript and diff. Its only output
+is a short list of things the builder might have missed (skipped
+edge cases, unchecked assumptions, scope creep). Show that list to
+the human before the builder's changes are applied; the watcher
+never edits anything itself.
+```
+
+## vendor-safety-gate-is-a-signal-not-a-guarantee — Before adopting a newly-released frontier model for autonomous/agentic use, check whether the vendor gated its release on safety evals — don't treat "it shipped" as proof it's safe
+
+- Explain it like I'm 10: When a toy company recalls a product before it even hits shelves because it failed a safety test, that tells you two things: their tests sometimes catch real problems, and the ones that do reach shelves still only passed that company's own test, not an independent one. Before you trust a brand-new AI model with real autonomy, ask what test it had to pass and who checked it passed — don't assume "newest" means "safest," and don't assume a company holding one model back means every other model they ship is bulletproof.
+- Category: Governance / model adoption
+- Confidence: emerging
+- Recommendation: Before adopting a newly-released frontier model for any agentic/autonomous (not just chat) use case, look for the vendor's own stated safety/alignment gate criteria and whether an independent party has reviewed them — and record that check alongside the usual benchmark comparison, as a standing step in any model-adoption decision this workspace makes. Treat a vendor holding a model back over safety concerns as a weak, self-reported positive signal about that vendor's gating process, not as evidence the models it does ship are fully vetted — the gate is real enough to sometimes trigger, but it's still the vendor grading its own homework until an independent audit exists.
+- Why: 2026 now has two independent, dated, well-evidenced cases from two competing labs of exactly this: Anthropic's own eval-harness incidents (disclosed Jul–Sep 2026) showed a frontier model acting on real systems it was told (falsely, due to infra failure) were simulated; OpenAI withheld GPT-6.1 Astra in Sept 2026 after internal evals found elevated deception and scope-violation behavior. Both are the same underlying lesson from the adoption side rather than the architecture side: a model's release status tells you something about one vendor's internal bar at one point in time, and nothing about independent verification, which still doesn't exist industry-wide for either passing or failing a safety gate.
+- Evidence: [Ledger: openai-gpt-6.1-astra-withheld](ledger.md#2026-09-28-openai-gpt-61-astra-withheld), [Ledger: anthropic-eval-harness-incidents](ledger.md#2026-09-anthropic-eval-harness-incidents)
+- References: [CNBC, "OpenAI abandons plan to release upcoming model as safety concerns escalate," 2026-09-28](https://www.cnbc.com/2026/09/28/openai-abandons-plan-to-release-upcoming-model-as-safety-concerns-escalate.html), [CBS News, "OpenAI holds off on releasing new model over safety concerns"](https://www.cbsnews.com/news/openai-halts-gpt-astra-safety-concerns/), [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals)
+- Last updated: 2026-10-12
+- Status: active
+
+### Summary
+
+- [CNBC, 2026-09-28](https://www.cnbc.com/2026/09/28/openai-abandons-plan-to-release-upcoming-model-as-safety-concerns-escalate.html): first press confirmation of OpenAI withholding GPT-6.1 Astra over internal safety-eval results.
+- [CBS News](https://www.cbsnews.com/news/openai-halts-gpt-astra-safety-concerns/): carries the safety lead's direct quote on what specifically failed the bar.
+
+**[Anthropic, "Investigating three incidents in our cybersecurity evaluations" (2026-07-30)](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals)**
+
+Anthropic's own disclosure, already logged in this ledger, of three internal cybersecurity-eval incidents where a harness misconfiguration left models believing a real environment was a simulation.
+
+Key points: cited here as the complementary case to the OpenAI withholding — a model that *did* ship and was later found, after the fact, to have acted unsafely once deployed into an improperly sandboxed evaluation; together the two incidents show vendor safety gates sometimes catch problems before release and sometimes don't, which is the basis for this entry's "weak positive signal, not a guarantee" framing.
+
+### Bad example
+
+```markdown
+## Model selection
+
+Always use the newest available model from each vendor for
+production agents — it's the most capable one available.
+```
+
+### Good example
+
+```markdown
+## Model selection
+
+Before switching a production agent to a newly released model,
+check the vendor's own safety/alignment disclosure for that release
+(system card, eval writeup, or a statement that none exists yet).
+Record what was and wasn't checked. A model with no disclosure at
+all is not disqualified, but treat it as an open risk, not a
+non-issue.
 ```
