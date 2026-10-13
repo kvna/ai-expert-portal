@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a one-page MCP 2026-07-28 compatibility checklist
+
+- Explain it like I'm 10: MCP just changed the shape of its plug — tools used to need to "stay on a phone call" with the AI, and now every message has to carry everything by itself, like a postcard. This exercise is making a one-page checklist you can run any MCP tool through to see if it still uses the old plug shape, so you catch it before it breaks instead of after.
+- Status: proposed
+- Based on: [Ledger: mcp-2026-07-28-spec](../knowledge/ledger.md#mcp-2026-07-28-spec) (MCP's biggest breaking spec change, published 2026-07-28, added to this workspace 2026-10-13)
+- Objective: Produce a durable, reusable checklist (not a one-off read) that can be run against any MCP server or client implementation — this workspace's own or a third party's — to flag reliance on the deprecated session-based model before it becomes a production break.
+- Why now: This is a real breaking change with a real deadline (a twelve-month deprecation window from 2026-07-28) — not a hypothetical. A reusable checklist built now is zero marginal cost to apply to the next ten MCP integrations this workspace touches, which is exactly the kind of durable asset the leverage lens favors over a one-off read of the spec.
+- Prerequisites: Basic familiarity with MCP (tools/resources/prompts concepts); access to at least one existing MCP server or client implementation to test the checklist against (this workspace's own, if one exists, or any public example server).
+- Deliverable: A Markdown checklist in `references/` covering: reliance on `initialize`/`Mcp-Session-Id`; use of server-initiated sampling/elicitation/roots (now replaced by Multi Round-Trip Requests); presence of `Mcp-Method`/`Mcp-Name` headers on Streamable HTTP; use of Roots/Sampling/Logging/legacy HTTP+SSE (deprecated, 12-month offramp from 2026-07-28); OAuth flow details (RFC 9207 `iss` validation, CIMD vs. Dynamic Client Registration) where applicable.
+- Estimate: 30–60 min
+- Steps: (1) Re-read the `mcp-2026-07-28-spec` ledger entry and, if reachable, the primary spec changelog; (2) draft the checklist items as yes/no/not-applicable questions; (3) run it against one real MCP implementation; (4) note which items it actually flagged and whether the flag was actionable or just noise.
+- Acceptance tests: The checklist runs against at least one real MCP server/client and produces at least one concrete, true finding (a flagged pattern that genuinely needs migration, or a confirmed "already compliant" on the stateless-core item).
+- Reflection: Was any flagged item cosmetic rather than substantive? Would this checklist have caught the breaking change before this workspace encountered it, if it had existed before 2026-07-28?
+- Optional extension: Turn the checklist into a small script (even a grep-based one) that scans a repository's MCP server code for the deprecated patterns automatically, rather than a manual read-through — directly reusable for any future audit.
+
