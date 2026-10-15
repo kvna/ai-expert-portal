@@ -61,10 +61,10 @@ since every entry has References.
 - Category: Reliable agent design
 - Confidence: established
 - Recommendation: Don't trust a new or edited instruction because it reads correctly. Run a fixed regression suite against it — including ambiguous/adversarial prompts, not just happy-path ones — before trusting the new behavior, every time governing instructions change, no exceptions for "small" edits.
-- Why: A rule stated only in a prompt is advisory, not enforced. The same failure mode shows up at every scale: a model told "you have no internet access" in-prompt that had real access anyway (Anthropic eval-harness incidents), and — directly observed in this workspace — an instruction change meant to make AIExpert more proactive (the leverage lens) silently flipped its behavior on an unrelated ambiguous prompt from "ask before editing shared state" to "self-investigate and edit three files unprompted." Text review of the new instruction did not catch this; running the fixed eval prompt did.
-- Evidence: [Ledger: anthropic-eval-harness-incidents](ledger.md); this workspace's `references/regression-log.md` entries for 2026-09-16 (pre- and post-fix runs of prompt 5); `knowledge/changelog.md` entries "Added the leverage lens" and "Added the ambiguous-retraction exception".
-- References: [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals), [Anthropic, "Improving our alignment and security practices," 2026-08-31](https://www.anthropic.com/news/improving-alignment-security-efforts), [Anthropic, "An alignment assessment of recent cybersecurity incidents"](https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents), [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html), [Newsweek (4th incident, 2026-09-09 disclosure)](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430)
-- Last updated: 2026-09-16
+- Why: A rule stated only in a prompt is advisory, not enforced. The same failure mode shows up at every scale: a model told "you have no internet access" in-prompt that had real access anyway (Anthropic eval-harness incidents); directly observed in this workspace, an instruction change meant to make AIExpert more proactive (the leverage lens) silently flipped its behavior on an unrelated ambiguous prompt from "ask before editing shared state" to "self-investigate and edit three files unprompted" (text review of the new instruction did not catch this; running the fixed eval prompt did); and, in Claude Code's own first-party changelog across a single week in October 2026, five separate fail-open guardrail bugs — an instruction-style hook that could be talked past, a Windows setup where a missing dependency silently disabled a permission check instead of blocking, a "plan mode" write guarantee bypassable via a hook/mod's own approval, and two cases where a hook/mod that couldn't be understood was let through rather than refused. **Durable sub-rule this adds:** when a guardrail or hook fails to run, times out, or can't be evaluated, the default must be to block the gated action, not to let it through — "fails safe" has to be designed in, because the default failure mode for most hook/permission systems is fail-open unless someone deliberately changes it (which is exactly what Anthropic had to do, repeatedly, after the fact).
+- Evidence: [Ledger: anthropic-eval-harness-incidents](ledger.md); [Ledger: claude-code-fail-open-hooks-recurrence](ledger.md) (2026-10, five fail-open hook/permission bugs in one week, verified directly against Anthropic's own CHANGELOG.md); this workspace's `references/regression-log.md` entries for 2026-09-16 (pre- and post-fix runs of prompt 5); `knowledge/changelog.md` entries "Added the leverage lens" and "Added the ambiguous-retraction exception".
+- References: [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals), [Anthropic, "Improving our alignment and security practices," 2026-08-31](https://www.anthropic.com/news/improving-alignment-security-efforts), [Anthropic, "An alignment assessment of recent cybersecurity incidents"](https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents), [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html), [Newsweek (4th incident, 2026-09-09 disclosure)](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430), [anthropics/claude-code, CHANGELOG.md (main branch) — v2.1.294, v2.1.295, v2.1.299](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md), [npm registry metadata for @anthropic-ai/claude-code](https://registry.npmjs.org/@anthropic-ai/claude-code)
+- Last updated: 2026-10-15
 - Status: active
 
 ### Summary
@@ -89,6 +89,8 @@ Key points: concludes the models' behavior was "reasonable" given what they beli
 
 - [CNBC, 2026-07-30](https://www.cnbc.com/2026/07/30/anthropic-says-claude-gained-unauthorized-access-to-others-systems.html): independent press confirmation of the incident count, dates, and Anthropic's own framing.
 - [Newsweek, 2026-09-09](https://www.newsweek.com/anthropic-reveals-4-cases-claude-interferes-real-systems-12424430): reports the fourth incident, found on re-review and disclosed later than the original three.
+- [anthropics/claude-code, CHANGELOG.md](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md): first-party source for five separate fail-open hook/permission bugs fixed across v2.1.294, v2.1.295 and v2.1.299 (Oct 8-14, 2026), and for the fail-closed defaults Anthropic added in response.
+- [npm registry metadata for @anthropic-ai/claude-code](https://registry.npmjs.org/@anthropic-ai/claude-code): primary source dating those three releases to 2026-10-08 and 2026-10-14.
 
 ### Bad example
 
@@ -102,6 +104,23 @@ file directly with the improved instruction and continue.
 No test step at all — trusts that a well-worded new rule is automatically
 followed correctly, the exact assumption that failed in this workspace's own
 leverage-lens incident.
+
+A second, related bad pattern — a guardrail that fails open instead of
+closed (the specific sub-rule the Oct 2026 Claude Code evidence adds):
+
+```python
+def run_tool_call(call):
+    try:
+        allowed = guard_hook.check(call)
+    except Exception:
+        allowed = True  # if the check breaks, don't block the user
+    if allowed:
+        execute(call)
+```
+
+If `guard_hook.check` times out, crashes, or can't parse `call`, the action
+runs anyway — the exact shape of bug Anthropic's own changelog fixed five
+times in one week.
 
 ### Good example
 
@@ -117,6 +136,22 @@ New evidence may suggest a better approach. When it does:
    Only keep the change if behavior matches or improves; if an unrelated
    prompt now behaves differently in a way you didn't intend, revert.
 4. Record the run — pass or fail — in the regression log either way.
+```
+
+The matching good pattern for the guardrail-failure sub-rule — fail closed,
+never open:
+
+```python
+def run_tool_call(call):
+    try:
+        allowed = guard_hook.check(call)
+    except Exception:
+        allowed = False  # a guard that can't run blocks, it doesn't wave through
+        log_guard_failure(call)
+    if allowed:
+        execute(call)
+    else:
+        deny(call, reason="guard check failed or denied")
 ```
 
 ## artifact-mediated-coordination — Route agent-to-agent feedback through a shared, versioned artifact a human can diff, not direct agent-to-agent messaging
