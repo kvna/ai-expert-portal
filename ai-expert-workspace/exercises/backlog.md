@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Measure whether a skill actually helps on your own coding tasks
+
+- Explain it like I'm 10: It's like taste-testing a recipe instead of trusting it just because the card looks professional. You cook the same dish once with the new recipe and once your usual way, then compare. This exercise does that same before/after comparison, but for a skill you'd otherwise just install and trust on an AI helper's word.
+- Status: proposed
+- Based on: [Ledger: skillsbench-effectiveness-findings](../knowledge/ledger.md) (SkillsBench and SWE-Skills-Bench, added 2026-10-17); Playbook: measure-skill-roi-before-trusting-it
+- Objective: Build a small, reusable paired-test template for measuring whether a specific skill actually improves outcomes on your own representative tasks, rather than trusting a skill's documentation, popularity, or provenance alone.
+- Why now: Two independent benchmarks found that most real-world software-engineering skills tested gave no measurable improvement, and some increased token cost for no better result — exactly the failure mode a quick before/after test catches, and exactly the domain (coding) this workspace's own skills (Claude- and Codex-side) are built for.
+- Prerequisites: Claude Code or Codex with skill support; one skill you already use or are considering (your own, or a third-party one that already passed conformance/provenance checks); 3-5 representative tasks of the kind the skill is meant to help with.
+- Deliverable: A reusable Markdown template (and one filled-in example run) recording, per task: pass/fail with the skill, pass/fail without it, and token cost for each run, plus a one-line verdict (keep / drop / scope narrowly).
+- Estimate: 30–60 min
+- Steps: (1) Pick one skill and 3-5 representative tasks; (2) run each task once with the skill loaded, once without, keeping everything else identical; (3) record pass/fail and token cost for both runs; (4) compute the delta per task and an overall verdict; (5) save the template so it can be reused on the next skill without rebuilding it.
+- Acceptance tests: All tasks ran both ways under comparable conditions; the template records a concrete pass/fail + token-cost delta per task, not just an impression; the verdict follows from the recorded data.
+- Reflection: Did the skill help uniformly, or only on a subset of tasks? Would you have kept trusting it on documentation alone if you hadn't measured it? Does the token-cost delta change the verdict even when the pass rate is flat or slightly better?
+- Optional extension: Turn the template into a lightweight script that any future AIExpert skill-adoption decision runs automatically before a skill is added to this workspace's own default toolset.
+
