@@ -468,3 +468,51 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## measure-skill-roi-before-trusting-it — A skill that's well-formed and comes from a trustworthy source still might not actually help; measure it against a without-skill baseline before relying on it, especially for coding tasks
+
+- Explain it like I'm 10: Imagine someone hands you a recipe card that looks professional and comes from a chef you trust. That doesn't guarantee the dish actually turns out better than your own way of cooking it — you'd only know by cooking it both ways and tasting the difference. It's the same with the instruction cards ("skills") people write for AI helpers: looking official and coming from someone trustworthy says nothing about whether it actually makes the AI's work better. Two research teams tested a bunch of real coding skills this way — with the skill and without it, on the same tasks — and found that most of them made no real difference, a few made the AI use way more effort for no better result, and only a handful were genuinely worth using. So treat a new skill like a recipe you haven't tasted yet: try the task both ways before you decide it's actually earning its place.
+- Category: Agent/skill factories
+- Confidence: emerging (two independent published benchmarks, qualitatively converging, but still only two single-paper results with no independent replication yet)
+- Recommendation: Before adopting any skill — your own or a third party's — for a real workflow, and especially for a coding/software-engineering task, run a small paired test: a handful of your own representative tasks, once with the skill loaded and once without, recording pass/fail and token cost for each. Keep the skill in your default toolset only if the with-skill runs show a real, repeatable improvement on that task type; if the delta is flat or negative, drop it, or scope it narrowly to the specific case it did help. Conformance (does it load correctly, per `agent-skills-open-standard-conformance`) and provenance (is it genuinely from who it claims, per `vet-skill-provenance-and-runtime`) are necessary checks but say nothing about whether the skill actually works — this is a third, separate check.
+- Why: Two independent academic benchmarks (SkillsBench and SWE-Skills-Bench) now show that a majority of real-world software-engineering skills tested produced no measurable pass-rate improvement — 39 of 49 in one benchmark, with software engineering also the weakest-performing domain (+4.5pp) in the other's 11-domain comparison — and that self-generated skills averaged no benefit at all. Some skills increased token cost by multiples for the same, non-improved result. This workspace's core use case is exactly the domain (coding/SWE) where the aggregate evidence is weakest, so trusting a skill on documentation and provenance alone is a specific, evidenced risk here, not a generic caution.
+- Evidence: [Ledger: skillsbench-effectiveness-findings](ledger.md)
+- References: [arXiv 2602.12670, "SkillsBench: Benchmarking How Well Agent Skills Work Across Diverse Tasks"](https://arxiv.org/abs/2602.12670), [arXiv 2603.15401, "SWE-Skills-Bench: Do Agent Skills Actually Help in Real-World Software Engineering?"](https://arxiv.org/abs/2603.15401), [Evaluating Evals, "SkillsBench Review"](https://evaluatingevals.substack.com/p/skillsbench-review)
+- Last updated: 2026-10-17
+- Status: active
+
+### Summary
+
+- [arXiv 2602.12670, SkillsBench](https://arxiv.org/abs/2602.12670): the primary source for the 16.2pp average lift, the domain-by-domain variance (SWE weakest at +4.5pp), and the finding that self-generated skills give no average benefit.
+- [arXiv 2603.15401, SWE-Skills-Bench](https://arxiv.org/abs/2603.15401): the primary source for the SWE-specific, real-repository finding that 39 of 49 skills gave zero improvement and the token-overhead numbers; published code lets this be independently re-run.
+- [Evaluating Evals, "SkillsBench Review"](https://evaluatingevals.substack.com/p/skillsbench-review): independent methodological critique, useful context for how much weight to put on SkillsBench's broad averages versus its per-domain figures.
+
+### Bad example
+
+```markdown
+## Before using a third-party skill
+
+1. Check that SKILL.md passes `skills-ref validate`.
+2. Check that the publisher is verified on the registry.
+3. Install it and add it to the default toolset.
+```
+
+Covers conformance and provenance, then stops — exactly the gap the evidence
+above exposes. A skill can pass both checks cleanly and still do nothing, or
+actively hurt, on the task it was written for.
+
+### Good example
+
+```markdown
+## Before using a third-party skill
+
+1. Check that SKILL.md passes `skills-ref validate`.
+2. Check that the publisher is verified on the registry.
+3. Pick 3-5 of your own representative tasks. Run each one twice: once with
+   the skill loaded, once without. Record pass/fail and token cost for both
+   runs.
+4. Only add the skill to the default toolset if the with-skill runs show a
+   real, repeatable improvement on this task type. If the delta is flat or
+   negative, drop it — or keep it scoped to the narrow case it actually
+   helped, rather than the whole toolset.
+```
