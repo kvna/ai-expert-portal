@@ -48,3 +48,33 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a reusable "is this repo's `.git` trustworthy?" pre-flight check
+
+- Explain it like I'm 10: Before you let a new helper loose in a room, you'd want someone to quickly check nothing's booby-trapped first. This exercise builds that quick check, as a small reusable script, for any project folder you're about to point a coding agent at.
+- Status: proposed
+- Based on: [Ledger: gitspawn-git-config-rce](../knowledge/ledger.md#gitspawn-git-config-rce) (GitSpawn disclosure, Sep 2026, added 2026-10-19); playbook: `git-config-is-untrusted-input`
+- Objective: Turn the GitSpawn finding (a repo's `.git/config` can trigger code execution the moment a coding agent does routine Git housekeeping) into a concrete, reusable habit rather than a one-time read of a security article.
+- Why now: This is directly about the exact tools in daily use (Claude Code, and whichever other coding agents are in rotation) — the smallest useful asset here is a script, not a policy document, so it actually gets run.
+- Prerequisites: Basic shell scripting; a coding agent CLI installed locally; a non-production repo to test against.
+- Deliverable: A small, reusable shell/Python script that, given a repo path, flags any non-default `core.fsmonitor` (and other hook-like Git config settings) in `.git/config`, and a one-paragraph note on where to run it (e.g. as a pre-flight step before opening an extracted/downloaded repo in a coding agent, not needed for a repo you `git clone`d yourself).
+- Estimate: 30–60 min
+- Steps: (1) Read the ledger entry and at least the Hacker News/CSA summaries of the GitSpawn mechanism; (2) write a script that greps `.git/config` for `core.fsmonitor` and other non-default hook-pointing keys; (3) test it against a deliberately "poisoned" local test repo (set `core.fsmonitor` to point at a harmless echo script) and confirm it flags it; (4) test it against a normal, freshly `git clone`d repo and confirm it stays quiet.
+- Acceptance tests: Script correctly flags the deliberately poisoned test repo and does not false-positive on an ordinary clone.
+- Reflection: Would this check have caught the actual GitSpawn finding as researchers described it? What repo-arrival channels (zip, USB, shared drive) are realistic for your own workflow versus purely theoretical?
+- Optional extension: Wrap the check as a Git `pre-commit`-style hook or a small wrapper script (`safe-claude-code <path>`) that runs the check automatically before launching a coding agent against a given path.
+
+## EX-005 — Audit an existing MCP integration for statelessness assumptions
+
+- Explain it like I'm 10: The universal AI-tool charger got redesigned so nothing "stays plugged in" anymore — every use has to carry everything it needs. This exercise checks whether anything you've already built secretly assumed the old "stays plugged in" behavior, before that assumption quietly breaks.
+- Status: proposed
+- Based on: [Ledger: mcp-stateless-spec](../knowledge/ledger.md#mcp-stateless-spec) (MCP 2026-07-28 spec revision, added 2026-10-19); playbook: `mcp-and-lifecycle-primitives`
+- Objective: Verify whether any MCP server, client, or gateway config already in use (or under evaluation) relies on protocol-level sessions, the `initialize` handshake, or Roots/Sampling/Logging — all changed or deprecated in the 2026-07-28 revision — before that reliance causes a silent break.
+- Why now: The spec change is already live; anything built against the older stateful model has an unknown, unaudited exposure until someone actually checks.
+- Prerequisites: Access to the config/code of at least one MCP server or client integration (even a small personal one); basic familiarity with the MCP transport docs.
+- Deliverable: A short checklist (Markdown) run against the integration: does it rely on `Mcp-Session-Id`? Does it assume a persistent connection remembers state between calls? Does it use Roots, Sampling, or Logging? One sentence per "yes" on what breaks and what the fix looks like (e.g. pass a server-issued handle as an explicit tool argument instead).
+- Estimate: 30–60 min
+- Steps: (1) Pick one real MCP integration (even a toy one); (2) read its connection-handling code or config against the checklist above; (3) for each "yes," sketch the one-line fix; (4) note the protocol version it currently targets and whether it needs a version bump to move to 2026-07-28.
+- Acceptance tests: The checklist is run against a real integration (not hypothetically) and produces at least one concrete yes/no per item with a one-line fix sketch for any "yes."
+- Reflection: How much of the integration's design already treated MCP as "just HTTP calls" versus implicitly leaning on a persistent connection? Is that distinction obvious from reading the code, or did it take this audit to surface?
+- Optional extension: If a fix is identified, apply it to a test instance and confirm the integration still works end-to-end on the new spec version.
+
