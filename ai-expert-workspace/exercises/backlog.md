@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit an MCP server/client against the 2026-07-28 breaking spec
+
+- Explain it like I'm 10: MCP just swapped its plug shape for a new one — the old "stay on the phone call the whole time" style got replaced with "send a quick text and get a quick reply" style. This exercise is just checking one real plug you actually use against the new plug shape, to see if it still fits or needs an adapter.
+- Status: proposed
+- Based on: [Ledger: mcp-2026-07-28-spec](../knowledge/ledger.md#mcp-2026-07-28-spec) (MCP's biggest breaking revision since remote MCP launched, published 2026-07-28, added to this workspace 2026-10-21)
+- Objective: Confirm, hands-on, whether an MCP server or client the user actually relies on (or any MCP server used inside this Claude Code / Codex setup) still matches the current spec — session handling, required headers, and the new `server/discover`/MRTR behavior — rather than assuming "it worked last time I checked."
+- Why now: The spec change is large enough (session IDs and the `initialize` handshake retired entirely) that anything integrated before 2026-07-28 may be silently running against a deprecated transport during its 12-month grace window, with no visible failure yet.
+- Prerequisites: Access to at least one MCP server/client configuration already in use; ability to read its transport-layer logs or make a raw request.
+- Deliverable: A short Markdown note stating which spec version the server/client currently speaks, which (if any) deprecated features it still relies on (Roots/Sampling/Logging, the legacy HTTP+SSE transport, DCR), and what would need to change before the 12-month deprecation windows close.
+- Estimate: 30–60 min
+- Steps: (1) Read the 2026-07-28 changelog's breaking-changes list; (2) pick one MCP integration already in use; (3) check whether it sends/expects `Mcp-Session-Id`, the `initialize` handshake, or the legacy SSE transport; (4) note whether it's already on the new request/response model or still on the deprecated path; (5) write the one-paragraph migration note.
+- Acceptance tests: The note names a specific spec feature (not a generic "check MCP docs") the integration does or doesn't yet use, backed by an actual observed request/response, not just reading documentation.
+- Reflection: Would this integration have silently kept working through the 12-month deprecation window with no one noticing it was on a deprecated path? What would make that visible sooner next time?
+- Optional extension: If the integration is self-hosted, open a small PR migrating it off one deprecated feature (e.g., the legacy HTTP+SSE transport) as a reusable template for the next MCP server this workspace builds.
+
