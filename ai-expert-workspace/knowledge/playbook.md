@@ -266,6 +266,47 @@ check the current MCP docs for that specific server — don't assume a
 setup that worked last quarter still matches the current spec.
 ```
 
+## right-size-subagent-effort — Set an explicit effort/reasoning level per delegated subagent call instead of leaving every subagent on one default
+
+- Explain it like I'm 10: Imagine you're the boss and you hand out chores. Some chores are quick ("grab milk from the fridge") and some are hard ("plan the whole birthday party"). If you always tell every helper "think about this as hard as you possibly can," the quick chore takes forever and costs more than it should. If you always say "just do it fast," the hard chore gets done badly. The smart boss tells each helper how much thinking the job actually needs — skim this one, really dig into that one. Claude Code's helper-agent tool now lets you say that directly instead of guessing with one fixed setting for every helper.
+- Category: Agent/skill factories — orchestration cost/quality control
+- Confidence: opinion (the capability itself is a verified, primary-sourced feature; the recommendation to use it deliberately is AIExpert's own synthesis — there is not yet an independent study or incident showing teams who skip this pay a measurable cost)
+- Recommendation: When building or configuring any multi-agent workflow on Claude Code / the Agent SDK, treat the sub-agent `effort` parameter as a first-class design choice, not an afterthought: set it per call based on the task's actual difficulty (e.g. low for a narrow lookup or mechanical edit, high/xhigh for open-ended research or architectural judgment) rather than leaving every delegated subagent on one inherited or default level. Revisit the setting when a subagent's job changes scope, the same way you'd revisit which model it runs on.
+- Why: Before this feature, effort/reasoning depth for a delegated subagent was effectively all-or-nothing — one setting applied uniformly regardless of the sub-task's actual difficulty. That forces a bad tradeoff: either over-pay in latency/cost on every simple delegated step, or under-think every hard one. A per-call effort dial removes that tradeoff entirely at zero marginal engineering cost, which is exactly the kind of small, compounding improvement the leverage lens asks AIExpert to prioritize — it makes every future multi-agent build cheaper or better, not just the current task.
+- Evidence: [Ledger: claude-code-mods-and-subagent-effort](ledger.md)
+- References: [anthropics/claude-code release v2.1.292](https://github.com/anthropics/claude-code/releases/tag/v2.1.292)
+- Last updated: 2026-10-24
+- Status: active
+
+### Summary
+
+- [anthropics/claude-code release v2.1.292](https://github.com/anthropics/claude-code/releases/tag/v2.1.292): primary source — official release notes documenting the new `effort` parameter on the Agent tool, confirmed directly from the changelog rather than secondary reporting.
+
+### Bad example
+
+```markdown
+## Delegating work
+
+Use the Agent tool for any sub-task. Spawn a subagent and let it run
+with default settings.
+```
+
+Every delegated subagent — a one-line file lookup and an open-ended
+research question alike — runs at the same fixed effort, so simple
+work is slow/expensive and hard work may be under-thought.
+
+### Good example
+
+```markdown
+## Delegating work
+
+Use the Agent tool for sub-tasks, and set `effort` deliberately per
+call: `low` for narrow lookups or mechanical edits, `medium` for
+routine multi-step work, `high`/`xhigh` for open-ended research or
+architectural judgment calls. When a subagent's job grows in scope
+mid-task, re-check whether its effort level still fits.
+```
+
 ## agent-skills-open-standard-conformance — Build and check every skill against the open agentskills.io spec, not just whichever platform you happen to be using
 
 - Explain it like I'm 10: Imagine you write instructions for a new kid at school on "how our class works." If you write them using words only your teacher understands, the instructions are useless the day you switch schools. But if you write them in plain, standard language any school could follow, the same instructions work everywhere you go. There's now an actual agreed-on "plain language" for writing instructions AI helpers use (called Agent Skills), and dozens of different AI companies have agreed to read it the same way. So when you write a new skill, check it against that shared rulebook — not just "does Claude understand this" — so it keeps working no matter which AI helper reads it next.
@@ -327,10 +368,12 @@ one it was written on.
 - Confidence: emerging (real, multi-outlet-corroborated incidents at meaningful scale; but the headline statistics come from two security vendors' own research/telemetry, not an independently reproduced count, and this session could not read the primary sources directly due to a network restriction — see the ledger entry's evidence-gathering note)
 - Recommendation: Treat every third-party AI skill/add-on (whether for this workspace's own Claude/Codex setup or any agent built here) as untrusted supply-chain input until checked on two axes, not one: (1) **provenance** — does it come from a verified publisher, not just a plausible-sounding name or a vendor-impersonating listing, and does its install source (registry, repo) show a real ownership history rather than a recently-cloned high-download-count clone; (2) **runtime behavior**, not just static text — read the current SKILL.md, but also confirm (via a sandboxed dry run, a runtime scanner, or at minimum re-reading it periodically after install) that what it actually does matches what it says, since the documented attack pattern here is to ship a clean skill, let it earn trust and downloads, and inject the malicious instruction later. A high install count is social proof of popularity, not of safety — it was the attacker's own goal in the confirmed campaign this entry is based on. This extends, and does not replace, the existing `agent-skills-open-standard-conformance` entry: spec conformance tells you a skill is well-formed, not that it is safe or still doing what it originally did.
 - Why: A confirmed, multi-outlet-corroborated campaign cloned trusted skills on Vercel's `skills.sh` registry, let the clones accumulate over 1.7 million aggregate installs, and only then injected instructions to exfiltrate SSH keys, cloud credentials, and other secrets from the installing machine — a static, install-time-only review would have found nothing wrong. Separately, an industry scan reported over 17,800 public AI add-ons (6.7M installs) pulling their real instructions from unverified external sources, including some directly impersonating Anthropic and OpenAI. Both findings show the same gap this workspace's other containment-focused entries already establish for agent sandboxes and browser content (`air-gap-governing-writes`, `untrusted-content-is-data-not-instructions`) now applies to the skill supply chain itself: a boundary or trust claim that is only checked once, at a point in time, is not a durable control.
-- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md)
-- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)
-- Last updated: 2026-09-17
+- Evidence: [Ledger: agent-skill-supply-chain-attacks](ledger.md); [Ledger: claude-code-mods-and-subagent-effort](ledger.md)
+- References: [Vercel, "Automated security audits now available for skills.sh" (changelog)](https://vercel.com/changelog/automated-security-audits-now-available-for-skills-sh), [Zenity, "Zenity Labs Uncovers 1.7 Million-Install Malicious Skills Campaign..." (BusinessWire, 2026-08-06)](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills), [CSO Online, "Trojanized AI skills gain 1.7M installs in agent-targeted attack"](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html), [Snyk, "Securing the Agent Skill Ecosystem: How Snyk and Vercel Are Locking Down the New Software Supply Chain"](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/), [TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use," 2026-09-01](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/), [anthropics/claude-code release v2.1.287 (Claude Mods)](https://github.com/anthropics/claude-code/releases/tag/v2.1.287)
+- Last updated: 2026-10-24
 - Status: active
+
+**2026-10-24 reinforcement:** Claude Code shipped "Mods" — a plugin tier explicitly built to "modify deeper behavior" (intercepting tool calls, overriding permission prompts, changing rendering), not just issue natural-language instructions the way a skill does (see [Ledger: claude-code-mods-and-subagent-effort](ledger.md)). This raises the stakes of the same recommendation rather than changing it: a Mod sits structurally closer to "part of the tool itself" than a skill, so a compromised or malicious Mod can do materially more damage than a compromised skill. Apply the same two-axis check (provenance, runtime behavior) to any third-party Mod before enabling it — do not assume the bar is lower just because it ships through the same `claude plugin install` path as an ordinary skill.
 
 ### Summary
 
@@ -338,6 +381,7 @@ one it was written on.
 - [Zenity (BusinessWire), 2026-08-06](https://www.businesswire.com/news/home/20260806707467/en/Zenity-Labs-Uncovers-1.7-Million-Install-Malicious-Skills-Campaign-and-Dozens-of-Malicious-AI-Agent-Skills): the original disclosure of the clone-then-poison campaign, its 1.7M+ install count, and the technique (clean skill earns trust, malicious instruction injected later).
 - [CSO Online](https://www.csoonline.com/article/4206851/trojanized-ai-skills-gain-1-7-million-installs-in-agent-targeted-attack.html): independent security-press corroboration of the same campaign and its scale.
 - [Snyk](https://snyk.io/blog/snyk-vercel-securing-agent-skill-ecosystem/): technical explainer, co-authored with Vercel, on securing the agent-skill supply chain.
+- [anthropics/claude-code release v2.1.287](https://github.com/anthropics/claude-code/releases/tag/v2.1.287): primary source for "Claude Mods" and the deeper-behavior access they grant, motivating the 2026-10-24 reinforcement above.
 
 **[TechCrunch, "AIR raises $50M to help companies vet the skills and add-ons AI agents use" (2026-09-01)](https://techcrunch.com/2026/09/01/air-raises-50m-to-help-companies-vet-the-skills-and-add-ons-ai-agents-use/)**
 

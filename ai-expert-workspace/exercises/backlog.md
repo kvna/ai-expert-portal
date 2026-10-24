@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a reusable subagent-effort rubric for multi-agent delegation
+
+- Explain it like I'm 10: You're the boss handing out chores again, but this time you write down a simple cheat sheet first: "quick, obvious chores get the 'just do it' effort level; chores where someone has to actually think and decide things get the 'really dig in' level." Next time you hand out chores, you just check the cheat sheet instead of guessing fresh each time.
+- Status: proposed
+- Based on: [Ledger: claude-code-mods-and-subagent-effort](../knowledge/ledger.md#2026-10-claude-code-mods-and-subagent-effort) (Claude Code `effort` parameter on the Agent tool, added 2026-10-06); playbook: right-size-subagent-effort
+- Objective: Turn the new per-subagent `effort` parameter into a reusable decision rule, instead of re-deciding the right effort level ad hoc on every delegation call — a durable asset (a checklist/rubric) rather than a one-off judgment call, per the leverage lens.
+- Why now: The capability is brand new (shipped 2026-10-06) and this workspace's own agent-building practice (this very AIExpert session delegates to subagents) is exactly the kind of workflow it's meant to improve; building the rubric now, while the feature is fresh, means every future delegation call benefits immediately.
+- Prerequisites: Claude Code with the Agent tool available (v2.1.292 or later); at least one existing multi-agent or subagent-delegating workflow to test it against.
+- Deliverable: A one-page Markdown rubric mapping task categories (e.g., "narrow file lookup," "mechanical edit/refactor," "open-ended research," "architectural judgment call") to a recommended `effort` level, plus 3 worked examples from real delegation calls made in this workspace showing the rubric applied and the actual outcome.
+- Estimate: 30–60 min
+- Steps: (1) List 6–10 subagent delegation calls this workspace has actually made (or would plausibly make); (2) categorize each by task type; (3) assign a provisional effort level per category and write one sentence of reasoning; (4) re-run or review 2–3 of them at the assigned level and note whether the outcome quality/cost tradeoff felt right; (5) revise the rubric based on what you observed.
+- Acceptance tests: The rubric has at least 4 task categories with a stated effort level and reasoning; at least 2 categories are backed by an observed (not hypothetical) delegation outcome.
+- Reflection: Did any task category surprise you — i.e. did a "simple-looking" task actually need higher effort, or vice versa? Should the rubric live as a reusable snippet in this agent's own instructions, or stay a human-consulted reference?
+- Optional extension: Encode the rubric as a small helper (a lookup table or short function) that a meta-agent could consult programmatically when spawning subagents, rather than a human reading a Markdown table each time.
+
