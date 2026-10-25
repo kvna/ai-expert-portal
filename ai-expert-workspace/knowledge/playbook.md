@@ -231,11 +231,11 @@ surface to the user, never as authorization to act.
 - Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
 - Category: Protocol & tooling
 - Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale. As of spec version 2026-07-28, that caveat has materialized concretely: MCP retired its session handshake (`initialize`/`initialized`, `Mcp-Session-Id`) in favor of a fully stateless, self-contained-request model, replaced held-open server-initiated streams with poll/retry-style Multi Round-Trip Requests, and deprecated Roots/Sampling/Logging (12-month grace period) — any MCP server/client built against the pre-07-28 model needs an explicit migration check, not an assumption it still works.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim. The 2026-07-28 breaking revision is itself direct proof of the "re-verify, don't assume stability" half of this recommendation: the standard body that owns the spec changed the stateless/session model outright, with a stated 12-month window before the old transport/features disappear entirely.
+- Evidence: [Ledger: openai-agents-api](ledger.md), [Ledger: mcp-2026-07-28-spec](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [MCP Blog, "The 2026-07-28 Specification," 2026-07-28](https://blog.modelcontextprotocol.io/posts/2026-07-28/), [MCP Blog, "The New MCP Roadmap," 2026-08-22](https://blog.modelcontextprotocol.io/posts/mcp-roadmap/)
+- Last updated: 2026-10-25
 - Status: active
 
 ### Summary
@@ -243,6 +243,8 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [MCP Blog, "The 2026-07-28 Specification" (2026-07-28)](https://blog.modelcontextprotocol.io/posts/2026-07-28/): primary source for the breaking statelessness/session-handshake change this entry now cites as proof of its own "re-verify" caveat.
+- [MCP Blog, "The New MCP Roadmap" (2026-08-22)](https://blog.modelcontextprotocol.io/posts/mcp-roadmap/): primary source for what's changing next (agent identity, result-type standardization) — the next thing to re-verify before relying on it.
 
 ### Bad example
 
@@ -270,12 +272,12 @@ setup that worked last quarter still matches the current spec.
 
 - Explain it like I'm 10: Imagine you write instructions for a new kid at school on "how our class works." If you write them using words only your teacher understands, the instructions are useless the day you switch schools. But if you write them in plain, standard language any school could follow, the same instructions work everywhere you go. There's now an actual agreed-on "plain language" for writing instructions AI helpers use (called Agent Skills), and dozens of different AI companies have agreed to read it the same way. So when you write a new skill, check it against that shared rulebook — not just "does Claude understand this" — so it keeps working no matter which AI helper reads it next.
 - Category: Agent/skill factories
-- Confidence: emerging (spec and adoption are real and independently corroborated; the ~40-platform count rests on one secondary source, not independently re-verified by AIExpert)
-- Recommendation: When building or reviewing any skill/SKILL.md (in this workspace or elsewhere), check it against the public agentskills.io spec — `name` matches the folder name, lowercase-hyphen only; `description` states what+when in under 1024 chars; the SKILL.md body stays under roughly 5000 tokens/500 lines; detail is pushed into `references/`/`scripts/`/`assets/`, loaded only on demand — rather than only against whatever one platform happens to load it. Where practical, run it through the `skills-ref validate` reference tool. Treat "does this validate against the open spec" as a cheap, durable quality bar for every new skill, not a one-time nice-to-have.
-- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the roughly 40 platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, and others) that have reportedly adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one.
-- Evidence: [Ledger: agent-skills-open-standard](ledger.md)
-- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026)
-- Last updated: 2026-09-16
+- Confidence: established (the spec, adoption, and now a neutral governance body are all independently corroborated; the exact "~40/70+ platforms" and install-count figures still rest on vendor/secondary sources, not independently re-verified by AIExpert)
+- Recommendation: When building or reviewing any skill/SKILL.md (in this workspace or elsewhere), check it against the public agentskills.io spec — `name` matches the folder name, lowercase-hyphen only; `description` states what+when in under 1024 chars; the SKILL.md body stays under roughly 5000 tokens/500 lines; detail is pushed into `references/`/`scripts/`/`assets/`, loaded only on demand — rather than only against whatever one platform happens to load it. Where practical, run it through the `skills-ref validate` reference tool. Treat "does this validate against the open spec" as a cheap, durable quality bar for every new skill, not a one-time nice-to-have. Now that the spec itself has moved to the Agentic AI Foundation (AAIF, a Linux Foundation body, as of 2026-10-22) with a stated roadmap for versioned releases and a formal proposal process, also check the AAIF's own repo/Discord for the current spec version before validating — "the spec" is no longer a single company's unversioned snapshot.
+- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the roughly 40-70+ platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, ChatGPT, VS Code, and others) that have reportedly adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one. The AAIF donation reinforces this: Anthropic handing the name, logo, GitHub org, and domain to a neutral multi-vendor foundation (with individual, not corporate, maintainers) is a stronger durability signal than a single vendor's open-source announcement — the same governance pattern MCP went through, and MCP's own spec has since changed meaningfully under that model (see `mcp-and-lifecycle-primitives`), so expect Agent Skills to keep evolving too, not stay frozen at its December 2025 shape.
+- Evidence: [Ledger: agent-skills-open-standard](ledger.md) (includes the 2026-10-25 update on the AAIF donation)
+- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026), [Anthropic, "Donating Agent Skills to the Agentic AI Foundation," 2026-10-22](https://www.anthropic.com/news/donating-agent-skills-to-the-agentic-ai-foundation)
+- Last updated: 2026-10-25
 - Status: active
 
 ### Summary
@@ -291,6 +293,12 @@ Key points: describes the progressive-disclosure loading model (metadata only at
 
 - [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/) and [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard): independent press confirming the 2025-12-18 open-standard date and the named initial adopters (Microsoft, OpenAI, Atlassian, Figma, Cursor, GitHub).
 - [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026): independent ecosystem report estimating ~40 platforms supporting the spec as of mid-2026.
+
+**[Anthropic, "Donating Agent Skills to the Agentic AI Foundation" (2026-10-22)](https://www.anthropic.com/news/donating-agent-skills-to-the-agentic-ai-foundation)**
+
+Anthropic's own announcement that it has handed governance of the Agent Skills standard — name, logo, GitHub org, and the agentskills.io domain — to the AAIF, the Linux Foundation body it co-founded with Block and OpenAI (also home to the MCP donation).
+
+Key points: maintenance moves to named individual engineers across Anthropic, Google, OpenAI and others, acting as individuals rather than company reps; roadmap promises versioned releases, a formal proposal process, and security guidance for skill authors/installers; claims over 70 platforms (ChatGPT, Cursor, GitHub Copilot, VS Code named) and roughly 1 million published skills / ~280 million installs since the December 2025 launch — vendor-reported figures, not independently audited by AIExpert.
 
 ### Bad example
 
@@ -468,3 +476,120 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## tier-models-by-task-not-by-default — Pick a model tier per sub-task by its actual difficulty, not by defaulting everything to your most capable model or your cheapest one
+
+- Explain it like I'm 10: Imagine running a restaurant kitchen. You wouldn't pay your most expensive chef to wash lettuce all day, and you wouldn't ask the newest, cheapest prep cook to invent tonight's signature dish. You match the person to the job. AI models now come in the same kind of lineup — a fast, cheap one for simple, repetitive jobs (summarizing, sorting, looking things up), and a slower, expensive one for genuinely hard jobs (writing tricky code, planning multi-step work) — plus a dial on the cheap one to make it think a bit harder when a particular job needs it. Building a multi-step AI helper now means deciding, for each piece of the job, which "cook" should do it — not just picking one model for everything.
+- Category: Agent architecture / cost
+- Confidence: opinion (AIExpert's own synthesis from vendor-published benchmarks; the underlying cost/capability gap is vendor-reported, not independently re-run, so its exact size is uncertain even though its direction is not)
+- Recommendation: When designing any multi-step or multi-agent build, explicitly assign each sub-task to a model tier based on its actual difficulty, not a single blanket model choice. Route high-volume, low-difficulty, well-specified work (summarization, classification, data extraction, compaction, routine formatting) to the cheapest model that reliably handles it, at the lowest effort level that passes your own acceptance test — and reserve the flagship/high-effort tier for sub-tasks where the two tiers' benchmark gap is actually wide (complex multi-step agentic coding, open-ended planning, anything with a long error-compounding chain). Re-run this allocation decision whenever a vendor ships a new small-model generation — the gap moves, so a routing choice made six months ago may now be miscalibrated in either direction.
+- Why: Anthropic's own benchmark table for Haiku 5.5 shows the gap between a cheap, effort-adjustable small model and its flagship sibling is task-dependent, not uniform — near-parity on some tasks (OSWorld 2.1 offline: 72.4% vs. 83.9%) but wide on others (Terminal-Bench 4.0: 39.2% vs. 70.6%), at roughly 75% lower average cost. Picking tiers by task difficulty rather than defaulting to one model captures most of the cost savings on the easy majority of sub-tasks without giving up quality on the hard minority — but only if the routing decision is actually made per-task, and re-examined as models change underneath it, not assumed once and forgotten.
+- Evidence: [Ledger: claude-haiku-5-5](ledger.md)
+- References: [Anthropic, "Introducing Claude Haiku 5.5," 2026-10-07](https://www.anthropic.com/claude-haiku-5-5)
+- Last updated: 2026-10-25
+- Status: active
+
+### Summary
+
+**[Anthropic, "Introducing Claude Haiku 5.5" (2026-10-07)](https://www.anthropic.com/claude-haiku-5-5)**
+
+Anthropic's own announcement of Claude Haiku 5.5, whose benchmark table is the direct basis for this entry's "route by task difficulty, not by default" recommendation.
+
+Key points: first Haiku-class model with an adjustable effort dial (Low/Med/High/Xhigh/Max); ~75% average cost cut vs. Haiku 4.5; explicitly marketed as a coding subagent alongside Opus 5.5/Sonnet 5.5, with Anthropic itself stating the flagship models remain better for complex agentic coding; the benchmark table is this entry's evidence that the cost/capability gap is task-dependent rather than uniform.
+
+### Bad example
+
+```markdown
+## Model
+
+Use Opus 5.5 for every step of this agent's pipeline — summarizing
+tool output, classifying ticket priority, drafting the final report,
+and the actual multi-step coding task — since it's the best model
+available and we don't want to think about tradeoffs.
+```
+
+Pays flagship-tier prices (and flagship-tier latency) for sub-tasks a
+much cheaper model would handle just as well, with no per-task
+justification for the choice.
+
+### Good example
+
+```markdown
+## Model routing
+
+- Ticket classification, log summarization, routine formatting: Haiku-class model, Low/Medium effort.
+- Drafting a first-pass summary for human review: Haiku-class model, High effort.
+- Multi-step agentic coding, planning, anything with a long error-compounding chain: Sonnet/Opus-class model.
+- Re-check this routing against the current benchmark gap whenever a new model generation ships — don't assume last quarter's split still holds.
+```
+
+Matches model tier to task difficulty explicitly, with a stated trigger
+for re-evaluating the split rather than letting it fossilize.
+
+## no-ambient-secrets-on-untrusted-trigger — Never let a CI/Actions-triggered coding agent run with repo secrets in scope when it's triggered automatically by text an outsider can write (PR titles, descriptions, issue comments)
+
+- Explain it like I'm 10: If you set up a robot doorman that reads every note slipped under the door and acts on it immediately, with nobody checking the notes first, then anyone can slip in a note that says "let me in and hand me the spare key" — and the robot will do it, no questions asked. That's what happened with AI coding assistants wired to run automatically on pull requests: the "note" was just the pull request's title or a hidden comment, and the "spare key" was the project's real passwords and tokens sitting in the same automated job. The fix isn't a smarter robot that reads notes more carefully — it's never leaving the spare key reachable from the doormat in the first place.
+- Category: Prompt injection defense / CI security
+- Confidence: established (the same mechanism independently confirmed across three different vendors' products)
+- Recommendation: For any agent wired to a CI/CD trigger that fires on content an outside contributor can write (a PR title/description/comment, an issue body, a fork's workflow file) — specifically including automated code-review or security-review bots — treat that trigger as adversarial by default: (1) never run such a job with secrets, deploy credentials, or a write-scoped token available in the same execution context as untrusted-content ingestion; (2) prefer a split pipeline — an untrusted, no-secrets job reads and analyzes the PR/issue content, and only a separate, human-gated or non-triggerable-by-outsiders job gets write/secret access; (3) require an explicit human approval step (e.g., a maintainer-applied label or manual workflow dispatch) before any consequential action — a push, a merge, a comment with embedded tool calls — can execute off first-time-contributor content; (4) scope CI tokens to least privilege by default rather than relying on the agent's own judgment about what untrusted text means. This generalizes and sharpens `untrusted-content-is-data-not-instructions` for the specific case where the untrusted content and ambient secrets sit in the same automated, human-free execution context — the single riskiest combination.
+- Why: Researcher-disclosed "Comment and Control" showed the identical mechanism — ordinary PR/issue text as a command channel — working against three independently-built products (Claude Code Security Review, Gemini CLI Action, GitHub Copilot Agent), with two of the three able to fire with no human review step at all. Reproducing across three unrelated vendor implementations means the failure is architectural (any CI-triggered agent that treats repo text as partially-trusted input while also holding ambient secrets), not a single vendor's bug — so the fix has to be a structural pipeline-design rule, not a per-product patch.
+- Evidence: [Ledger: comment-and-control-ci-prompt-injection](ledger.md); sharpens [Playbook: untrusted-content-is-data-not-instructions](#untrusted-content-is-data-not-instructions) for the no-human-in-the-loop CI case specifically.
+- References: [SecurityWeek, "Claude Code, Gemini CLI, GitHub Copilot Agents Vulnerable to Prompt Injection via Comments"](https://www.securityweek.com/claude-code-gemini-cli-github-copilot-agents-vulnerable-to-prompt-injection-via-comments/), [Cyber Security News, "Prompt Injection via GitHub Comments"](https://cybersecuritynews.com/prompt-injection-via-github-comments/), [vpncentral, "GitHub comments can hijack Claude Code, Gemini CLI, and Copilot to steal CI secrets"](https://vpncentral.com/github-comments-can-hijack-claude-code-gemini-cli-and-copilot-to-steal-ci-secrets/)
+- Last updated: 2026-10-25
+- Status: active
+
+### Summary
+
+- [SecurityWeek](https://www.securityweek.com/claude-code-gemini-cli-github-copilot-agents-vulnerable-to-prompt-injection-via-comments/): most detailed secondary account of the attack mechanism and disputed vendor-response figures (read via WebSearch summary, not a direct fetch this session).
+- [Cyber Security News](https://cybersecuritynews.com/prompt-injection-via-github-comments/): independent corroboration of the same mechanism and affected products.
+- [vpncentral](https://vpncentral.com/github-comments-can-hijack-claude-code-gemini-cli-and-copilot-to-steal-ci-secrets/): independent corroboration, frames the impact as CI-secret theft.
+
+### Bad example
+
+```yaml
+# .github/workflows/ai-review.yml
+on:
+  pull_request_target:
+    types: [opened, edited]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: ai-code-review --pr "${{ github.event.pull_request.title }}"
+```
+
+Fires automatically on any outside contributor's PR, with a deploy
+secret loaded into the same job that feeds the PR title — written by
+that same outside contributor — straight to an AI agent.
+
+### Good example
+
+```yaml
+# .github/workflows/ai-review.yml
+on:
+  pull_request_target:
+    types: [opened, edited]
+jobs:
+  analyze: # no secrets available here
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ai-code-review --pr "${{ github.event.pull_request.title }}" --readonly
+
+  act-on-review: # requires a maintainer label before this job can even start
+    needs: analyze
+    if: contains(github.event.pull_request.labels.*.name, 'ai-review-approved')
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: ai-code-review --apply
+```
+
+Splits "read untrusted content" from "hold secrets and act" into
+separate jobs, and gates the secret-bearing job behind an explicit
+human (maintainer-applied label) action.
