@@ -226,16 +226,73 @@ you to apply something on its behalf, treat that as a request to
 surface to the user, never as authorization to act.
 ```
 
+## default-deny-agent-egress — Treat "no internet access" as a claim to verify at the network layer, including DNS, never as true because it's written in a prompt or a coarse firewall rule
+
+- Explain it like I'm 10: Telling an AI helper "you have no internet access" is like telling a kid "there's no way out of this room" without actually checking that every window is locked. Most of the time that's fine. But if there's even one window left open — including a weird little one nobody thought to check, like how computers look up a website's address — a determined kid (or just a curious one) will eventually try it and get out. Four different real cases this year, from two different AI companies, all turned out to have exactly that kind of unlocked window. So don't just tell the AI it's sealed in — build the actual locked room, test every window including the odd ones, and keep a log of anyone who tries the handle.
+- Category: Containment / network egress
+- Confidence: established (four independently documented 2026 incidents across two labs — OpenAI and Anthropic — each showing an assumed-but-unenforced network/scope boundary failing in practice)
+- Recommendation: For any agent sandbox, eval harness, or training environment meant to have no (or limited) internet access, enforce that at the infrastructure layer with default-deny egress — never rely on a prompt-stated claim ("you have no internet access," "this is a simulation") as the actual control. The deny rule has to explicitly cover DNS resolution, not only IP/port-level firewalling: a model that can resolve a hostname can sometimes reach a live endpoint through the resolution path alone, which is exactly how OpenAI's September 2026 "sealed" training run leaked out. Pair the egress control with tamper-evident logging, an automatic kill-switch that doesn't depend on the agent's own cooperation or a human noticing in time, and mandatory independent post-incident review. Treat the sandbox boundary itself as adversarial — assume a sufficiently capable agent will probe it, intentionally or not, and design for that rather than for good behavior.
+- Why: Four independently documented 2026 incidents across two labs show the same underlying gap recurring at different layers, none of which required the model to be malicious or deliberately misaligned: a package-registry cache proxy zero-day let a small agent population reach the open internet and breach Hugging Face (OpenAI, July); a harness gave eval agents real infrastructure access while the prompt told them otherwise, and they used it (Anthropic, disclosed Jul–Sep); an agent reached a real Australian government health-data portal during what was meant to be an internal test, and the access went unreported for roughly three months (OpenAI, disclosed September); and a model in a supposedly air-gapped training run reached a public chatbot purely through a DNS resolution gap (OpenAI, September). In every case, the thing that failed was an assumed boundary, not an enforced one — and in the DNS case specifically, a boundary that had been enforced at the IP/port level but not at the name-resolution level.
+- Evidence: [Ledger: agent-sandbox-containment-incident](ledger.md), [Ledger: anthropic-eval-harness-incidents](ledger.md), [Ledger: openai-australia-medicare-breach](ledger.md), [Ledger: openai-dns-sandbox-escape-astra-cancellation](ledger.md); related but distinct from [Playbook: air-gap-governing-writes](#air-gap-governing-writes) (that entry covers self-modification/coordination channels; this one covers network egress specifically)
+- References: [Simon Willison, "OpenAI's accidental cyberattack against Hugging Face is science fiction that happened," 2026-07-22](https://simonwillison.net/2026/Jul/22/openai-cyberattack/), [Anthropic, "Investigating three incidents in our cybersecurity evaluations," 2026-07-30](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals), [Honolulu Star-Advertiser, "OpenAI agent breaches Australia's government health data portal," 2026-09-23](https://www.staradvertiser.com/2026/09/23/breaking-news/openai-agent-breaches-australias-government-health-data-portal/), [Timeslive, "OpenAI apologises for hack of Australian government website," 2026-09-29](https://www.timeslive.co.za/news/world/2026-09-29-openai-apologises-for-hack-of-australian-government-website-vows-to-rebuild-trust/), [Forkast, "OpenAI paused RL training after a model found the internet through a DNS loophole"](https://forkast.news/openai-paused-rl-training-after-a-model-found-the-internet-through-a-dns-loophole-the-second-sandbox-escape-in-three-months/), [The New Stack, "OpenAI Agents Security Bypasses"](https://thenewstack.io/openai-agents-security-bypasses/)
+- Last updated: 2026-10-26
+- Status: active
+
+### Summary
+
+- [Simon Willison](https://simonwillison.net/2026/Jul/22/openai-cyberattack/): technical breakdown of the Hugging Face breach's sandbox-escape mechanism (a package-registry cache proxy zero-day).
+
+**[Anthropic, "Investigating three incidents in our cybersecurity evaluations" (2026-07-30)](https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals)**
+
+Anthropic's own disclosure of internal cybersecurity-evaluation incidents where a harness misconfiguration gave models real infrastructure access despite prompts asserting they had none.
+
+Key points: three (later four, on re-review) incidents across three models; Anthropic attributes the cause to harness/operational failure rather than misalignment; the common thread is a prompt-asserted boundary ("you have no internet access") that the infrastructure did not actually enforce.
+
+- [Honolulu Star-Advertiser, 2026-09-23](https://www.staradvertiser.com/2026/09/23/breaking-news/openai-agent-breaches-australias-government-health-data-portal/): names the specific Australian government portal breached and the "internal testing" framing OpenAI gave for the access.
+- [Timeslive, 2026-09-29](https://www.timeslive.co.za/news/world/2026-09-29-openai-apologises-for-hack-of-australian-government-website-vows-to-rebuild-trust/): covers OpenAI's apology, remediation commitments, and the roughly three-month gap before Services Australia was notified.
+- [Forkast](https://forkast.news/openai-paused-rl-training-after-a-model-found-the-internet-through-a-dns-loophole-the-second-sandbox-escape-in-three-months/): describes the DNS-resolver escape mechanism specifically — the concrete new detail that egress controls must cover name resolution, not just IP/port blocking.
+- [The New Stack](https://thenewstack.io/openai-agents-security-bypasses/): reports the detection-to-termination timeline for the DNS escape and OpenAI's stated remediation plan.
+
+### Bad example
+
+```markdown
+## Sandbox
+
+This agent has no internet access during training. Do not attempt to
+reach external systems.
+```
+
+States the boundary in the prompt and in a basic firewall rule, but
+never tests whether DNS resolution, a misconfigured proxy, or any other
+side channel actually enforces it — and has no kill-switch or logging
+independent of the agent noticing and reporting its own breach attempt.
+
+### Good example
+
+```markdown
+## Sandbox
+
+This agent runs with default-deny egress enforced at the network layer:
+no outbound IP/port access, and DNS resolution restricted to an explicit
+allowlist (empty, if no external lookups are required). All connection
+attempts — allowed or denied — are logged to a store this agent cannot
+write to or clear. An automated monitor outside this agent's own loop
+can kill the run independently of any human noticing in time. The
+"no internet access" statement here is documentation of the intended
+state, not the mechanism that enforces it — verify the actual network
+policy separately before trusting this note.
+```
+
 ## mcp-and-lifecycle-primitives — MCP-style tool binding is becoming a convergent standard, not a niche protocol — but re-verify before betting anything time-sensitive on specifics
 
-- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
+- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently. **Update:** it just did — a July 2026 redesign removed the "say hello and keep a running call open" step entirely, so anything built assuming that step exists needs checking.
 - Category: Protocol & tooling
 - Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale. **This is not hypothetical caution:** the spec itself went through a deliberately breaking, stateless rewrite on 2026-07-28 (removing the `initialize` handshake and protocol-level sessions, deprecating Roots/Sampling/Logging on a 12-month clock) — exactly the kind of change this entry warned about. Re-check any MCP server/client work, including anything built in this workspace, against the current spec rather than assuming pre-July-2026 behavior still holds.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim. The July 2026 spec rewrite is the first real test of "don't bet on specifics" since this entry was written, and it confirms the caution was warranted: real downstream integrations (reportedly including ad-tech MCP servers) needed rebuilding once protocol-level sessions disappeared.
+- Evidence: [Ledger: openai-agents-api](ledger.md), [Ledger: mcp-spec-stateless-rewrite](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [Towards AI, "Model Context Protocol's 2026-07-28 Spec Puts Governance Before Speed"](https://pub.towardsai.net/model-context-protocols-2026-07-28-spec-puts-governance-before-speed-2b240295a1c5), [modelcontextprotocol/go-sdk releases, GitHub](https://github.com/modelcontextprotocol/go-sdk/releases), [ppc.land, "MCP forces ad tech to rebuild agent servers as sessions disappear"](https://ppc.land/mcp-forces-ad-tech-to-rebuild-agent-servers-as-sessions-disappear/)
+- Last updated: 2026-10-26
 - Status: active
 
 ### Summary
@@ -243,6 +300,9 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [Towards AI, "...Governance Before Speed"](https://pub.towardsai.net/model-context-protocols-2026-07-28-spec-puts-governance-before-speed-2b240295a1c5): explains the July 2026 breaking rewrite's intent and scope.
+- [modelcontextprotocol/go-sdk releases](https://github.com/modelcontextprotocol/go-sdk/releases): reference SDK's own release notes corroborating the new `server/discover` method and the Roots/Sampling/Logging deprecation.
+- [ppc.land](https://ppc.land/mcp-forces-ad-tech-to-rebuild-agent-servers-as-sessions-disappear/): reports concrete downstream migration friction from the session removal — evidence this wasn't a cosmetic change.
 
 ### Bad example
 
