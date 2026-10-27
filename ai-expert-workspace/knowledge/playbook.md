@@ -468,3 +468,51 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## vendor-table-over-vendor-prose — When citing a vendor's own benchmark claim, quote the number from their data table, never their summary sentence about it
+
+- Explain it like I'm 10: Imagine a report card where the written comment says "tied for first place" but the actual grades printed right below it show your grade is clearly the highest in the class. You'd trust the grades, not the comment. The same thing can happen on a company's own product-announcement page: the sentence and the table disagree, and the sentence is the more flattering, rounder-sounding one. So always pull the specific number from the table itself when repeating a vendor's claim — never repeat their one-line characterization of it.
+- Category: Research standard / evidence quality
+- Confidence: opinion (AIExpert's own synthesis from one documented instance; not yet seen repeated elsewhere, so treat the general rule as prudent practice rather than an established pattern)
+- Recommendation: When recording or repeating any vendor benchmark comparison (in the ledger, in a conversation, in an exercise), cite the literal number from the vendor's own table/data, and independently check it against any adjoining prose claim before repeating that prose claim. If the two disagree, say so explicitly and prefer the table.
+- Why: A vendor's announcement page is not a single unified fact — the marketing prose and the data table are often written separately, and the prose summary can round off, cherry-pick, or simply misstate what the table shows, even with no intent to mislead. This is a cheap, mechanical check (it costs nothing beyond reading the table once) that is far cheaper than catching the error after it has propagated into a recommendation. It extends, rather than replaces, this workspace's existing practice of treating every vendor benchmark claim as a claim rather than a verified fact.
+- Evidence: [ledger: claude-opus-5-5](ledger.md) — Anthropic's own Opus 5.5 announcement states in prose that Opus 5.5 "matches" GPT-6 Astra on Terminal-Bench 4.0 at lower cost, while the page's own benchmark table shows Opus 5.5 at 66.4% vs. Astra's 57.9% — a clear table-vs-prose lead, not a tie.
+- References: [Anthropic, "Claude Opus 5.5" news page, 2026-09-22](https://www.anthropic.com/news/claude-opus-5-5)
+- Last updated: 2026-10-27
+- Status: active
+
+### Summary
+
+**[Anthropic, "Claude Opus 5.5" (news page, 2026-09-22)](https://www.anthropic.com/news/claude-opus-5-5)**
+
+The source of this entry's evidence: Anthropic's own announcement page, where the prose and the benchmark table disagree about whether Opus 5.5 ties or beats GPT-6 Astra on Terminal-Bench 4.0.
+
+Key points: table shows Opus 5.5 at 66.4% vs. Astra 57.9% (a clear lead), while the prose nearby describes the result as "matching" Astra at lower cost; the same table also shows Astra ahead of Opus 5.5 on AutomationBench and Terminal-Bench-Science 0.1, so the overall comparison is mixed rather than a clean win for either vendor — another reason to read the full table rather than any single summarizing sentence.
+
+### Bad example
+
+```markdown
+## Scouting
+
+When a vendor announces a new model, summarize its benchmark claims in
+the ledger using the comparison sentence from their announcement post
+(e.g. "matches the prior leading model at a fraction of the cost").
+```
+
+Repeats the vendor's own characterization verbatim without checking it
+against the data table on the same page, so a rounding, cherry-pick, or
+outright inconsistency in the vendor's prose becomes this workspace's
+recorded "fact."
+
+### Good example
+
+```markdown
+## Scouting
+
+When a vendor announces a new model, locate the actual benchmark table
+in the primary source and cite the specific numbers from it. Before
+repeating any comparison sentence from the vendor's prose ("matches,"
+"beats," "ties"), check it against those table numbers. If prose and
+table disagree, record both and flag the discrepancy rather than
+picking one silently.
+```
