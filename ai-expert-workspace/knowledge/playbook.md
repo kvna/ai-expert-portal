@@ -270,12 +270,12 @@ setup that worked last quarter still matches the current spec.
 
 - Explain it like I'm 10: Imagine you write instructions for a new kid at school on "how our class works." If you write them using words only your teacher understands, the instructions are useless the day you switch schools. But if you write them in plain, standard language any school could follow, the same instructions work everywhere you go. There's now an actual agreed-on "plain language" for writing instructions AI helpers use (called Agent Skills), and dozens of different AI companies have agreed to read it the same way. So when you write a new skill, check it against that shared rulebook — not just "does Claude understand this" — so it keeps working no matter which AI helper reads it next.
 - Category: Agent/skill factories
-- Confidence: emerging (spec and adoption are real and independently corroborated; the ~40-platform count rests on one secondary source, not independently re-verified by AIExpert)
-- Recommendation: When building or reviewing any skill/SKILL.md (in this workspace or elsewhere), check it against the public agentskills.io spec — `name` matches the folder name, lowercase-hyphen only; `description` states what+when in under 1024 chars; the SKILL.md body stays under roughly 5000 tokens/500 lines; detail is pushed into `references/`/`scripts/`/`assets/`, loaded only on demand — rather than only against whatever one platform happens to load it. Where practical, run it through the `skills-ref validate` reference tool. Treat "does this validate against the open spec" as a cheap, durable quality bar for every new skill, not a one-time nice-to-have.
-- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the roughly 40 platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, and others) that have reportedly adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one.
-- Evidence: [Ledger: agent-skills-open-standard](ledger.md)
-- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026)
-- Last updated: 2026-09-16
+- Confidence: established (spec, adoption, and now a neutral multi-vendor governance body are all independently corroborated; the precise 70-platform/1M-skill/280M-install figures still trace back to Anthropic/Vercel's own counts, not an independent re-measurement)
+- Recommendation: When building or reviewing any skill/SKILL.md (in this workspace or elsewhere), check it against the public agentskills.io spec — `name` matches the folder name, lowercase-hyphen only; `description` states what+when in under 1024 chars; the SKILL.md body stays under roughly 5000 tokens/500 lines; detail is pushed into `references/`/`scripts/`/`assets/`, loaded only on demand — rather than only against whatever one platform happens to load it. Where practical, run it through the `skills-ref validate` reference tool. Treat "does this validate against the open spec" as a cheap, durable quality bar for every new skill, not a one-time nice-to-have. Now that the spec is governed by the Agentic AI Foundation (AAIF, under the Linux Foundation) rather than Anthropic alone, also watch AAIF's own roadmap (versioned releases, a formal proposal process, and — directly relevant to the `vet-skill-provenance-and-runtime` entry below — security guidance for skill authors/installers) for changes worth re-checking existing skills against.
+- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the 70+ platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, VS Code, and others) that have adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one. The October 2026 move to neutral foundation governance (the same path Anthropic took with MCP) further de-risks betting on this spec long-term: it's no longer one vendor's roadmap to unilaterally change.
+- Evidence: [Ledger: agent-skills-open-standard](ledger.md), [Ledger: agent-skills-donated-to-aaif](ledger.md)
+- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [Anthropic, "Donating Agent Skills to the Agentic AI Foundation"](https://www.anthropic.com/news/donating-agent-skills-to-the-agentic-ai-foundation), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026), [The Register](https://www.theregister.com/a/5304912)
+- Last updated: 2026-10-29
 - Status: active
 
 ### Summary
@@ -289,8 +289,15 @@ Anthropic's own announcement introducing Agent Skills — a standard way of pack
 
 Key points: describes the progressive-disclosure loading model (metadata only at startup, full SKILL.md body on activation, referenced files loaded only when needed); frames the format as shared industry infrastructure rather than a Claude-only feature, explicitly drawing the comparison to how Anthropic treated MCP; names initial launch partners (Microsoft, OpenAI, Atlassian, Figma, Cursor, GitHub, plus partner-built skills from Canva, Stripe, Notion, and Zapier).
 
+**[Anthropic, "Donating Agent Skills to the Agentic AI Foundation" (2026-10-22)](https://www.anthropic.com/news/donating-agent-skills-to-the-agentic-ai-foundation)**
+
+Anthropic's announcement handing the standard's name, logo, GitHub org, and domain to the AAIF (Linux Foundation), the same body it already donated MCP to.
+
+Key points: spec/file format itself is unchanged, nothing required of existing adopters; proposed AAIF roadmap adds versioned releases, a formal proposal process, and security guidance for skill authors/installers; cites 70+ integrating platforms, 1M+ published skills, ~280M cumulative installs; names David Soria Parra and Mahesh Murag as Lead Maintainers, with engineers from Anthropic, Google, OpenAI, and others maintaining it as individuals.
+
 - [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/) and [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard): independent press confirming the 2025-12-18 open-standard date and the named initial adopters (Microsoft, OpenAI, Atlassian, Figma, Cursor, GitHub).
-- [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026): independent ecosystem report estimating ~40 platforms supporting the spec as of mid-2026.
+- [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026): independent ecosystem report estimating ~40 platforms supporting the spec as of mid-2026 (superseded by the 70+ figure Anthropic itself cites as of October 2026).
+- [The Register](https://www.theregister.com/a/5304912): independent tech press confirming the AAIF's Linux Foundation structure, its Anthropic/Block/OpenAI founders, and that it already hosted MCP, goose, and AGENTS.md before Agent Skills joined.
 
 ### Bad example
 
@@ -468,3 +475,80 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## tier-model-by-task-cost — Route high-volume/low-complexity subagent work to the cheapest adequate model tier; re-check default-behavior changes before swapping model IDs
+
+- Explain it like I'm 10: Not every job needs your most expensive, most capable worker. If you're sorting a huge pile of mail into bins, you hire a fast, cheap sorter — you save your most skilled (and priciest) person for the one hard letter that needs real judgment. AI models now come in the same kind of tiers (cheap-and-fast vs. expensive-and-capable), and a smart agent setup sends each piece of work to the cheapest tier that can actually do it. But — and this is the part people skip — when you swap in a newer version of a model, check what quietly changed about how it behaves by default (like whether it now always "thinks out loud" even when you didn't ask it to), not just the price tag.
+- Category: Agent/skill factories — cost and orchestration design
+- Confidence: opinion (AIExpert's own synthesis of a real, primary-sourced pricing/capability event; the general tiered-routing principle itself is standard industry practice, not a novel claim)
+- Recommendation: When designing or reviewing a multi-agent or multi-step pipeline, explicitly assign a model tier per task type rather than defaulting every call to the same model: cheap/fast-tier models (e.g. Claude Haiku-class) for high-volume, low-judgment work — classification, summarization/compaction, data extraction, simple subagent fan-out — and reserve the top tier (e.g. Claude Opus-class) for orchestration, complex agentic coding, or anything where a wrong call is expensive to undo. Treat this as a cost/latency lever to revisit every time a vendor ships a same-tier refresh, since price-per-task can move sharply (a 90% cut in one refresh, in the case this entry is based on) even when per-token list price looks unchanged. Separately and always: before swapping a model ID in a production agent — even a "minor version" bump — check the vendor's own release notes for silently-changed defaults (extended-thinking on/off toggles, effort-level defaults, safety-classifier routing) that can alter behavior or cost even though your code didn't change.
+- Why: Model vendors now ship tier-wide refreshes close together (three Claude sizes within three weeks in this case) with materially different price/capability curves at each tier, and they bundle in behavior-default changes alongside the price changes. An agent design that hardcodes "always call the top model" leaves cost on the table and doesn't benefit when the cheap tier gets a step-change improvement; an agent design that upgrades a model ID without checking for default-behavior changes risks a silent regression (a previously-disabled extended-thinking mode turning back on, changing latency/cost/output shape) that has nothing to do with the task logic itself.
+- Evidence: [Ledger: claude-5-5-model-family](ledger.md)
+- References: [Anthropic, "Claude Opus 5.5"](https://www.anthropic.com/news/claude-opus-5-5), [Anthropic, "Claude Sonnet 5.5"](https://www.anthropic.com/news/claude-sonnet-5-5), [Anthropic, "Claude Haiku 5.5"](https://www.anthropic.com/news/claude-haiku-5-5)
+- Last updated: 2026-10-29
+- Status: active
+
+### Summary
+
+**[Anthropic, "Claude Opus 5.5"](https://www.anthropic.com/news/claude-opus-5-5)**
+
+Anthropic's own announcement and benchmark page for the flagship-tier refresh.
+
+Key points: 20% cheaper input/output than Opus 5; thinking mode can no longer be disabled — a default-behavior change, not just a price change; large reported drop in containment-boundary-circumvention attempts versus the prior generation.
+
+**[Anthropic, "Claude Sonnet 5.5"](https://www.anthropic.com/news/claude-sonnet-5-5)**
+
+Anthropic's own announcement for the mid-tier refresh.
+
+Key points: list price unchanged but cache-read price halved and typical cost-per-task down ~30% from token efficiency; the old "thinking off" toggle is replaced by a new `between_tools` setting, meaning anyone upgrading from Sonnet 5 with thinking disabled must explicitly migrate that setting or inherit different behavior.
+
+**[Anthropic, "Claude Haiku 5.5"](https://www.anthropic.com/news/claude-haiku-5-5)**
+
+Anthropic's own announcement for the small/cheap-tier refresh.
+
+Key points: ~90% cheaper than Haiku 4.5 for prompts under 100k tokens; gains an adjustable effort setting (new for this tier); Anthropic explicitly positions it for subagent/high-volume work alongside the bigger models rather than as their replacement — the vendor's own framing matches the tiered-routing recommendation above.
+
+### Bad example
+
+```yaml
+# orchestrator config — every step calls the same model
+pipeline:
+  - step: classify_ticket
+    model: claude-opus-5-5
+  - step: summarize_thread
+    model: claude-opus-5-5
+  - step: draft_response
+    model: claude-opus-5-5
+  - step: final_review
+    model: claude-opus-5-5
+```
+
+Every step — including trivial classification and summarization — pays
+flagship-tier price and latency. And if this config was written against
+an older model ID, nobody checked whether upgrading it silently changed
+a default like thinking mode.
+
+### Good example
+
+```yaml
+# orchestrator config — tier by task complexity, pinned with a reviewed changelog check
+pipeline:
+  - step: classify_ticket
+    model: claude-haiku-5-5       # high-volume, low-judgment
+    effort: low
+  - step: summarize_thread
+    model: claude-haiku-5-5
+    effort: medium
+  - step: draft_response
+    model: claude-sonnet-5-5      # needs real judgment, moderate cost
+  - step: final_review
+    model: claude-opus-5-5        # highest-stakes step only
+# Note for next model-ID bump: re-read the vendor release notes for this
+# model before changing the pinned ID above — check for changed defaults
+# (thinking/effort toggles, safety routing), not just price.
+```
+
+Cheap/fast work goes to the cheap/fast tier; only the highest-judgment step
+pays flagship price. The inline note makes the "check for silent default
+changes" step part of the config itself, not something that has to be
+remembered separately.
