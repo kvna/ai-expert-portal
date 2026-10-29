@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Validate AIExpert's own SKILL.md files against the agentskills.io spec
+
+- Explain it like I'm 10: AIExpert has been writing its own instruction files in a format that's supposed to follow a shared, agreed-on rulebook — but nobody's actually checked the homework against the rulebook's own answer key. This exercise is just that check.
+- Status: proposed
+- Based on: [Ledger: agent-skills-open-standard](../knowledge/ledger.md#2025-12-18-agent-skills-open-standard--anthropic-open-sources-the-agent-skills-spec-40-platforms-adopt-by-mid-2026) and [Ledger: agent-skills-donated-to-aaif](../knowledge/ledger.md#2026-10-22-agent-skills-donated-to-aaif--anthropic-hands-agent-skills-governance-to-a-neutral-foundation-the-same-move-it-made-with-mcp) (flagged as an open follow-up in both entries); [Playbook: agent-skills-open-standard-conformance](../knowledge/playbook.md#agent-skills-open-standard-conformance--build-and-check-every-skill-against-the-open-agentskillsio-spec-not-just-whichever-platform-you-happen-to-be-using)
+- Objective: Confirm, with an actual tool run rather than a manual read-through, that this workspace's own `.claude/agents/ai-expert.md`-style Claude skill and its Codex `SKILL.md` counterpart conform to the public agentskills.io spec — and fix anything that doesn't.
+- Why now: The spec now has real governance behind it (AAIF/Linux Foundation) and 70+ adopting platforms; a skill that silently fails validation stops being "quirky but working" and starts being "broken everywhere except the one platform you happened to test on." This is a near-zero-cost check that was flagged twice and never actually run.
+- Prerequisites: Node/npm or equivalent to run `skills-ref validate` (from github.com/agentskills/agentskills), or a manual checklist pass against the spec's frontmatter/size rules if the tool can't be installed.
+- Deliverable: A short Markdown note recording the validator's output (pass/fail per rule) for each of AIExpert's own skill files, plus any fixes applied.
+- Estimate: 30–60 min
+- Steps: (1) Install or run `skills-ref validate` against the repo's skill files; (2) if the tool is unavailable, manually check: `name` matches the folder, lowercase-hyphen only; `description` ≤1024 chars and states what+when; SKILL.md body ≤~5000 tokens/500 lines; (3) record pass/fail per file; (4) fix any violations found; (5) re-run to confirm a clean pass.
+- Acceptance tests: Every skill file in this workspace either passes validation or has a documented, deliberate reason it doesn't; the note records the actual validator output, not just "looks fine."
+- Reflection: Did the spec check catch anything a human read-through had missed? Does this change how confident you are that these files would load correctly on a platform other than Claude Code?
+- Optional extension: Add a cheap CI-style check (a pre-commit hook or a one-line Make/npm script) that re-runs the validator automatically whenever a skill file changes, so this becomes a durable guardrail rather than a one-time check.
+
