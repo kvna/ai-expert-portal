@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Validate AIExpert's own SKILL.md files against the open agentskills.io spec
+
+- Explain it like I'm 10: There's now an official rulebook (written down, not just "whatever Claude happens to understand") for how an AI helper's instruction packet should be put together. This exercise is just checking AIExpert's own instruction packet against that rulebook, the way you'd check a form against an official checklist before submitting it.
+- Status: proposed
+- Based on: [Ledger: agent-skills-open-standard](../knowledge/ledger.md#agent-skills-open-standard) (spec publication, 2025-12-18) and [Ledger: agent-skills-donated-to-aaif](../knowledge/ledger.md#agent-skills-donated-to-aaif) (governance handed to the Agentic AI Foundation, 2026-10-22, added 2026-11-01); playbook: agent-skills-open-standard-conformance.
+- Objective: Confirm AIExpert's own Codex-side `.agents/skills/ai-expert/SKILL.md` (and any other skill files this workspace ships) actually conform to the open agentskills.io spec — not just "it happens to work on the platform it was written for" — and fix anything that doesn't, as a near-zero-cost way to keep it portable across the 70+ platforms that reportedly integrate the spec.
+- Why now: This was flagged as a candidate exercise back in the Sep 2026 scan but never added to the backlog; the Oct 2026 foundation donation (formal versioning, a real change-proposal process, published security guidance for skill authors) makes "does AIExpert's own skill validate against the current spec" a concrete, checkable, and now slightly higher-stakes question than when it was an Anthropic-only convention.
+- Prerequisites: Access to this repository; Node.js or Python (whichever the `skills-ref validate` reference tool requires); the current agentskills.io specification page.
+- Deliverable: A short Markdown note recording: the validator's output (pass/fail/warnings) for every SKILL.md file in this repo, any fixes applied, and a one-paragraph note on whether the file was already conformant or needed changes.
+- Estimate: 30–60 min
+- Steps: (1) Install/run the `skills-ref validate` reference tool (or, if unavailable, manually check each SKILL.md's frontmatter and body against the current spec's `name`/`description`/size limits); (2) run it against every SKILL.md in this repo; (3) fix any violation found; (4) re-run to confirm a clean pass; (5) record the before/after result.
+- Acceptance tests: Every SKILL.md in the repo either passes `skills-ref validate` (or the manual equivalent) or has a documented, deliberate reason it doesn't; the note names the exact spec revision/version checked against.
+- Reflection: Was anything non-conformant that still "worked" on Claude/Codex specifically — i.e., did platform-specific tolerance let a spec violation go unnoticed until checked explicitly? What would break first if this skill were loaded on a platform you haven't tested it on?
+- Optional extension: Propose (via `proposals/`, not a direct edit) the resulting fixes as a governed change to AIExpert's own Codex skill file, so the human-approval gate for self-improvement still applies even to a mechanical conformance fix.
+
