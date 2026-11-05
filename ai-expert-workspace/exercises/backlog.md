@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Reproduce (or debunk) the Sonnet 5.5 vs. Opus 5.5 cost/capability claim on a real task
+
+- Explain it like I'm 10: A company that sells both a cheap tool and an expensive tool just told you the cheap one now works almost as well as the expensive one. Before you believe them and start always grabbing the cheap tool, it's worth actually testing both on a real job yourself.
+- Status: proposed
+- Based on: [Ledger: claude-5-5-model-family](../knowledge/ledger.md#2026-0910-claude-5-5-model-family--opus-sonnet-and-haiku-55-ship-with-a-large-agentic-coding-benchmark-jump-and-opuss-first-built-in-enterprise-agent-safety-features) (Claude Opus/Sonnet/Haiku 5.5, Sep–Oct 2026); playbook: `sonnet-before-opus-on-cost`
+- Objective: Get a first-hand read on whether Sonnet 5.5 genuinely closes the gap to Opus 5.5 on a real coding/agent task in this workspace, rather than trusting Anthropic's own benchmark deltas at face value.
+- Why now: The vendor's claimed jump (Terminal-Bench 4.0: Sonnet 5 10.3% → Sonnet 5.5 70.6%) is large enough that it changes a real decision — which model tier to default to for day-to-day agent work — and this session could not independently verify it (network policy blocked the independent benchmark/press sites that would normally cross-check a claim this size).
+- Prerequisites: Access to both Sonnet 5.5 and Opus 5.5 (Claude Code or the API); one moderately complex, realistic coding or agent task from this workspace or a real project (not a toy prompt).
+- Deliverable: A short written comparison (Markdown) of the same task run once on Sonnet 5.5 (Medium effort) and once on Opus 5.5 (default): wall-clock time, number of tool calls/turns, whether either needed mid-task clarification, and a judgment call on output quality.
+- Estimate: 30–60 min
+- Steps: (1) Pick one real task with a clear success criterion; (2) run it on Sonnet 5.5 and record turns/time/outcome; (3) run the same task fresh on Opus 5.5 and record the same; (4) compare against Anthropic's claimed Terminal-Bench/CursorBench deltas — does your single data point support, contradict, or simply not speak to the vendor claim; (5) update the `sonnet-before-opus-on-cost` playbook entry's Confidence field if the result is informative either way.
+- Acceptance tests: Both runs actually completed on the same task; the write-up distinguishes what you observed from what the vendor claimed, rather than restating the benchmark numbers as if they were independently confirmed.
+- Reflection: Did effort level (Low/Medium/High) matter as much as model choice? Would a single task run change your default model choice, or is a larger sample needed before trusting either tier as the new default?
+- Optional extension: Repeat with a Terraform/IaC-flavored task (plan review, module scaffolding) to see whether the gap behaves the same way outside pure software-coding benchmarks.
+
