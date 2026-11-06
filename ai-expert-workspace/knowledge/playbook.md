@@ -233,9 +233,9 @@ surface to the user, never as authorization to act.
 - Confidence: emerging
 - Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
 - Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-2026-07-28-stateless-spec](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [MCP blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/)
+- Last updated: 2026-11-06
 - Status: active
 
 ### Summary
@@ -243,6 +243,8 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+
+- [MCP blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/): the maintainers' own announcement of the protocol's largest revision since launch — exactly the kind of "the plug shape changed" event this entry's Explain-it-like-I'm-10 warned to check for; see [ledger: mcp-2026-07-28-stateless-spec](ledger.md) and [playbook: mcp-stateless-first](playbook.md) for full detail.
 
 ### Bad example
 
@@ -266,16 +268,61 @@ check the current MCP docs for that specific server — don't assume a
 setup that worked last quarter still matches the current spec.
 ```
 
+## mcp-stateless-first — Design new MCP servers/clients stateless-first; put a real date on migrating off Roots, Sampling, Logging, and session-based state
+
+- Explain it like I'm 10: Imagine a coat-check that used to remember "this ticket belongs to the person who walked in at 3pm" by keeping a running list all day. The new rule is: every time you hand back your ticket, it has to say everything about your coat right there on the ticket itself — color, size, claim number — so any coat-check worker, not just the one who was there at 3pm, can hand it over correctly. A few old habits (like the running list) still work for now, but there's a one-year countdown before they're taken away for good, so don't build anything new that depends on them.
+- Category: Protocol & tooling
+- Confidence: established (official specification, primary source, with a published 12-month deprecation policy — not a rumor or a third-party guess)
+- Recommendation: For any new MCP server or client built from this point forward: (1) don't rely on the old `initialize`/`initialized` handshake or `Mcp-Session-Id` header for state — they're retired; if you need to track something across calls, have the server mint an explicit handle via a tool result and have the model pass it back as a plain tool argument on the next call; (2) send `Mcp-Method`/`Mcp-Name` headers on Streamable HTTP requests, since they're now required, not optional; (3) treat Roots, Sampling, Logging, and the legacy HTTP+SSE transport as already deprecated — they still work today, but put an actual migration date on your calendar inside the twelve-month window rather than waiting for them to break; (4) use Client ID Metadata Documents (CIMD) for new OAuth client registration rather than Dynamic Client Registration, which is itself now deprecated. For any *existing* MCP integration, audit it against this list before assuming last quarter's implementation still matches the live spec.
+- Why: The spec's own maintainers call this the protocol's largest revision since launch, and it ships with a formal twelve-month deprecation policy rather than an immediate cutover — that window is a gift, but only if you actually use it to migrate rather than treating "still works" as "safe to keep building on." Building new work against already-deprecated primitives today just relocates the migration cost to a future date of someone else's choosing.
+- Evidence: [Ledger: mcp-2026-07-28-stateless-spec](ledger.md)
+- References: [MCP blog, "The 2026-07-28 Specification," 2026-07-28](https://blog.modelcontextprotocol.io/posts/2026-07-28/), [Better Stack, "MCP Goes Stateless: What the 2026-07-28 Spec Changes and How to Migrate"](https://betterstack.com/community/guides/ai/mcp-stateless.md), [dev.to, "The MCP 2026-07-28 Spec: What Changes and What Breaks"](https://dev.to/abhijeet_singh_4577af3ef9/the-mcp-2026-07-28-spec-what-changes-and-what-breaks-4421)
+- Last updated: 2026-11-06
+- Status: active
+
+### Summary
+
+- [MCP blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/): the primary, authoritative source for every change and SEP number this recommendation is based on.
+- [Better Stack, "MCP Goes Stateless"](https://betterstack.com/community/guides/ai/mcp-stateless.md): independent, practically-oriented migration guide for teams running session-based MCP servers today.
+- [dev.to, "The MCP 2026-07-28 Spec: What Changes and What Breaks"](https://dev.to/abhijeet_singh_4577af3ef9/the-mcp-2026-07-28-spec-what-changes-and-what-breaks-4421): independent walkthrough of concrete breaking changes and the errors an unmigrated server throws.
+
+### Bad example
+
+```markdown
+## Tools
+
+Build the order-tracking MCP server so it stores the current order ID
+in server-side session state once the client connects, keyed off the
+transport session. Later tool calls just say "get status" and the
+server looks up which order that session is for.
+```
+
+Depends entirely on the retired session mechanism — breaks the moment a
+request lands on a different server instance, and gives up the ability to
+load-balance behind a plain round-robin pool.
+
+### Good example
+
+```markdown
+## Tools
+
+Build the order-tracking MCP server so the "start tracking" tool
+returns an explicit order handle in its result. Every later tool call
+(`get_status`, `cancel`, etc.) takes that handle as a plain argument —
+no reliance on transport-level session state, so any server instance
+behind a round-robin load balancer can answer any request.
+```
+
 ## agent-skills-open-standard-conformance — Build and check every skill against the open agentskills.io spec, not just whichever platform you happen to be using
 
 - Explain it like I'm 10: Imagine you write instructions for a new kid at school on "how our class works." If you write them using words only your teacher understands, the instructions are useless the day you switch schools. But if you write them in plain, standard language any school could follow, the same instructions work everywhere you go. There's now an actual agreed-on "plain language" for writing instructions AI helpers use (called Agent Skills), and dozens of different AI companies have agreed to read it the same way. So when you write a new skill, check it against that shared rulebook — not just "does Claude understand this" — so it keeps working no matter which AI helper reads it next.
 - Category: Agent/skill factories
 - Confidence: emerging (spec and adoption are real and independently corroborated; the ~40-platform count rests on one secondary source, not independently re-verified by AIExpert)
 - Recommendation: When building or reviewing any skill/SKILL.md (in this workspace or elsewhere), check it against the public agentskills.io spec — `name` matches the folder name, lowercase-hyphen only; `description` states what+when in under 1024 chars; the SKILL.md body stays under roughly 5000 tokens/500 lines; detail is pushed into `references/`/`scripts/`/`assets/`, loaded only on demand — rather than only against whatever one platform happens to load it. Where practical, run it through the `skills-ref validate` reference tool. Treat "does this validate against the open spec" as a cheap, durable quality bar for every new skill, not a one-time nice-to-have.
-- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the roughly 40 platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, and others) that have reportedly adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one.
-- Evidence: [Ledger: agent-skills-open-standard](ledger.md)
-- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026)
-- Last updated: 2026-09-16
+- Why: A skill written only for Claude's specific quirks is a one-off asset; a skill that also validates against the vendor-neutral spec transfers to the roughly 70+ platforms (Codex, Copilot, Cursor, Gemini CLI, Goose, and others) that have reportedly adopted it, for close to zero extra cost. This is exactly the "cross-platform agent portfolio" leverage this workspace already practices manually (its own Claude subagent and Codex skill files) — the spec turns an informal convention into a checkable one. **Update (2026-10-22):** the spec is no longer solely Anthropic-governed — Anthropic donated the Agent Skills name, logo, GitHub org, and `agentskills.io` domain to the vendor-neutral Agentic AI Foundation (which already hosts MCP), with maintenance now resting on engineers from Anthropic, OpenAI, and Google in personal capacities. This strengthens the case for treating agentskills.io as the canonical spec to validate against (reduced single-vendor lock-in/discontinuation risk) — but it is a governance change to the *spec*, not a safety signal about any individual *published* skill; keep checking provenance per the separate `vet-skill-provenance-and-runtime` entry regardless of who governs the format.
+- Evidence: [Ledger: agent-skills-open-standard](ledger.md); [Ledger: agent-skills-foundation-donation](ledger.md)
+- References: [agentskills.io/specification](https://agentskills.io/specification), [github.com/agentskills/agentskills](https://github.com/agentskills/agentskills), [Anthropic, "Introducing Agent Skills"](https://www.anthropic.com/news/skills), [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/), [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard), [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026), [Anthropic news page (Oct 22 2026 item)](https://www.anthropic.com/news), [KuCoin News, "Anthropic Donates the Agent Skills Standard to the Linux Foundation"](https://www.kucoin.com/news/flash/anthropic-donates-agent-skills-standard-to-linux-foundation), [FourWeekMBA, "Anthropic Donates Agent Skills After Nearly 280M Installs"](https://fourweekmba.com/ai-anthropic-donates-agent-skills-after-nearly-280m-installs/)
+- Last updated: 2026-11-06
 - Status: active
 
 ### Summary
@@ -291,6 +338,9 @@ Key points: describes the progressive-disclosure loading model (metadata only at
 
 - [SiliconANGLE, 2025-12-18](https://siliconangle.com/2025/12/18/anthropic-makes-agent-skills-open-standard/) and [VentureBeat](https://venturebeat.com/ai/anthropic-launches-enterprise-agent-skills-and-opens-the-standard): independent press confirming the 2025-12-18 open-standard date and the named initial adopters (Microsoft, OpenAI, Atlassian, Figma, Cursor, GitHub).
 - [Agentman, "The Agent Skills Ecosystem in 2026"](https://agentman.ai/blog/agent-skills-ecosystem-report-2026): independent ecosystem report estimating ~40 platforms supporting the spec as of mid-2026.
+- [Anthropic news page](https://www.anthropic.com/news): primary confirmation of the Oct 22, 2026 donation to the Agentic AI Foundation and the ">70 platforms" adoption figure.
+- [KuCoin News](https://www.kucoin.com/news/flash/anthropic-donates-agent-skills-standard-to-linux-foundation): independent coverage naming the specific assets transferred (name, logo, GitHub org, domain).
+- [FourWeekMBA](https://fourweekmba.com/ai-anthropic-donates-agent-skills-after-nearly-280m-installs/): independent coverage citing the ~1M skills / ~280M installs figures and the new multi-vendor maintenance arrangement.
 
 ### Bad example
 
@@ -377,10 +427,10 @@ later once it's earned trust.
 - Category: Cost/context management
 - Confidence: emerging (the mechanism — cache-hit economics — is well understood and independently verifiable; the specific recall/cost numbers come from one independently run study on one system, not yet replicated)
 - Recommendation: Don't compact/summarize a growing agent context reflexively just because it's a commonly recommended practice. First cap the size of individual tool outputs going into context (the cheapest, cache-preserving lever). Only summarize when you can point to one of three measured triggers: the context genuinely won't fit the window even after trimming; cached-input pricing has crossed a real cost threshold for your workload; or you've measured actual recall/quality degradation on specific facts, not just an impression that the conversation is "getting long." When you do compact, remember it rewrites the cached prefix and forfeits the provider's cache discount — budget for that cost explicitly.
-- Why: A production study found full-history retention beat a compaction-based preset on all three axes that matter (memory recall, cost per turn, time-to-first-token) on one real system, because summarization breaks the cached prefix that gives a large per-token discount on repeated context. This complicates the common assumption that compaction is a free or automatically-beneficial default; it's a tool with a real cost that should be triggered by evidence, not applied preemptively.
-- Evidence: [Ledger: context-compaction-vs-full-history](ledger.md)
-- References: [Anthropic, "Effective context engineering for AI agents," 2025-09-29](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), [Louis Bouchard / Towards AI, "Context Engineering in 2026," 2026-08-18](https://www.louisbouchard.ai/context-engineering-2026/)
-- Last updated: 2026-09-16
+- Why: A production study found full-history retention beat a compaction-based preset on all three axes that matter (memory recall, cost per turn, time-to-first-token) on one real system, because summarization breaks the cached prefix that gives a large per-token discount on repeated context. This complicates the common assumption that compaction is a free or automatically-beneficial default; it's a tool with a real cost that should be triggered by evidence, not applied preemptively. **Reinforcing evidence (2026-11-06):** Claude Code itself shipped "idle compaction" (v2.1.316, 2026-10-31) with exactly this cache-aware trigger condition — it only uses a background summary on your next message if the prompt cache has already expired, i.e. it won't throw away a still-live cache hit just to shorten context. This is a single vendor's product-design choice, not a new controlled study, but it's a concrete sign the underlying mechanism (summarizing forfeits a cache hit you might not have needed to give up) is being designed around in production, not just in one research study.
+- Evidence: [Ledger: context-compaction-vs-full-history](ledger.md); [Ledger: claude-code-idle-compaction](ledger.md)
+- References: [Anthropic, "Effective context engineering for AI agents," 2025-09-29](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), [Louis Bouchard / Towards AI, "Context Engineering in 2026," 2026-08-18](https://www.louisbouchard.ai/context-engineering-2026/), [Claude Code changelog](https://code.claude.com/docs/en/changelog)
+- Last updated: 2026-11-06
 - Status: active
 
 ### Summary
@@ -392,6 +442,7 @@ Anthropic's own guidance on managing an agent's context window over long-running
 Key points: recommends compaction alongside just-in-time retrieval, curated few-shot examples, and a persistent memory tool; presents compaction as a standard lever for long-horizon agents without publishing head-to-head cost/recall numbers against a caching-aware "keep everything" baseline; predates the independent production study (Towards AI, Aug 2026) that later complicated a "compact by default" reading of this guidance.
 
 - [Louis Bouchard / Towards AI, 2026-08-18](https://www.louisbouchard.ai/context-engineering-2026/): independently run production study finding full-history retention beat a compaction preset on cost, latency, and recall, because summarizing forfeits the cached-prefix discount.
+- [Claude Code changelog](https://code.claude.com/docs/en/changelog): primary, official source for the "idle compaction" feature's exact cache-aware trigger condition and rollout versions.
 
 ### Bad example
 
