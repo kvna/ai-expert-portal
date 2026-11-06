@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Build a stateless-first MCP tool-call checklist/template from a session-based example
+
+- Explain it like I'm 10: MCP's rulebook changed so tools can't rely on "remembering who you are" between calls anymore — every call now has to carry everything it needs on its own, like a postcard instead of a phone call. This exercise takes one example tool built the old, "remembering" way and rewrites it the new way, then turns what you learned into a one-page checklist you can reuse on the next ten MCP tools you ever build, not just this one.
+- Status: proposed
+- Based on: [Ledger: mcp-2026-07-28-stateless-spec](../knowledge/ledger.md#mcp-2026-07-28-stateless-spec) (MCP 2026-07-28 specification); [Playbook: mcp-stateless-first](../knowledge/playbook.md#mcp-stateless-first)
+- Objective: Learn the concrete mechanics of the explicit-handle pattern (mint a handle in a tool result, pass it back as a plain argument) by actually converting a session-reliant tool-call design to it, and produce a durable, reusable checklist — not a one-off conversion — per the leverage lens.
+- Why now: The spec's twelve-month deprecation window for session-based state started 2026-07-28; any MCP tooling this workspace builds or recommends from now on should default to the new pattern, and a checklist makes that default cheap to apply consistently across every future tool.
+- Prerequisites: Basic familiarity with any MCP server implementation (Python or TypeScript SDK) and tool-call request/response shapes.
+- Deliverable: (1) A short before/after code sketch converting one hypothetical session-reliant tool (e.g., "track an order" from the playbook's Good example) to the explicit-handle pattern; (2) a one-page, reusable "MCP stateless-first checklist" (Markdown) covering: no reliance on `initialize`/session headers, explicit handles as tool arguments, required `Mcp-Method`/`Mcp-Name` headers, and a note to check Roots/Sampling/Logging/HTTP+SSE usage against the 12-month deprecation clock.
+- Estimate: 30–60 min
+- Steps: (1) Read the "Fact" section of the mcp-2026-07-28-stateless-spec ledger entry and the official spec post; (2) sketch the old session-based version of a simple two-call tool interaction; (3) rewrite it using an explicit handle; (4) extract the general pattern into the checklist so it's usable without re-reading the spec each time.
+- Acceptance tests: The before/after sketch runs (or would run) without any transport-level session dependency in the "after" version; the checklist is generic enough to apply to a different tool without editing its wording.
+- Reflection: Which part of the old pattern felt like "free" convenience that the new spec forces you to make explicit instead? Does making state explicit in the data make the tool easier or harder to reason about than hidden session state did?
+- Optional extension: Apply the same checklist to any MCP server configuration already referenced in this workspace's `.mcp.json`/subagent tool configs, and note whether any of them still assume session-based behavior.
+
