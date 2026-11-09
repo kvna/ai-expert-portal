@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit every guard hook for fail-closed behavior
+
+- Explain it like I'm 10: You just found out that the security guard you hired works backwards by default — if his badge-reader breaks, he waves people through instead of stopping them. This exercise is going around and checking every guard you've hired (every blocking hook in your own agent tooling) to make sure each one has been told "if you break, stop people anyway," not left on the risky default.
+- Status: proposed
+- Based on: [Ledger: claude-code-hook-fail-open-by-default](../knowledge/ledger.md#claude-code-hook-fail-open-by-default) (2026-11-09); playbook: `hooks-fail-open-by-default`
+- Objective: Confirm, by direct test rather than code review, that every containment-critical hook in this workspace's own Claude Agent SDK tooling (or any the user builds) actually blocks the intended action when the guard callback itself fails — not just when it runs normally.
+- Why now: Anthropic's own docs confirm hooks fail open by default; a guard that was never deliberately configured with `on_failure="block"` is silently permissive in exactly the failure case that matters most, and this is a near-zero-cost check to run now rather than discover during an incident.
+- Prerequisites: Access to any Claude Agent SDK Python/TypeScript code with `PreToolUse` (or similar blocking) hooks registered — this workspace's own tooling if it has any, or a small throwaway script otherwise.
+- Deliverable: A short checklist (Markdown) listing every blocking hook found, whether `on_failure`/`onFailure` is set to `"block"`, and the result of one deliberate test per hook (force the callback to throw, confirm the action is still blocked).
+- Estimate: 30–60 min
+- Steps: (1) Grep for `HookMatcher`/`PreToolUse` across any Claude Agent SDK code you control; (2) for each blocking hook, check whether `on_failure="block"` is set; (3) for at least one hook, deliberately make the callback raise an exception and confirm the action is blocked (not allowed through); (4) add `on_failure="block"` to any hook missing it and re-test.
+- Acceptance tests: At least one hook was actually forced to fail and observed to block (not just read in code); every containment-critical hook found ends the exercise with `on_failure`/`onFailure` explicitly set.
+- Reflection: Did you have any hook that you assumed was blocking, that this test revealed was fail-open? What would have caught this before a production incident?
+- Optional extension: Extend the same audit to any Terraform/OPA policy-as-code guard the user runs for infrastructure changes — does that guard also fail open on an evaluation error, and if so, is that the intended behavior for a policy gate?
+
