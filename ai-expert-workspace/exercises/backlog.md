@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit every agent/subagent's model-tier assignment against the escalate/default/step-down ladder
+
+- Explain it like I'm 10: Go through every helper-robot you've built or use and ask, for each one: "is this doing a sledgehammer job with a sledgehammer, a butter-knife job with a butter knife — or did I just grab whatever was newest without thinking about it?" Write down what you find, fix the obvious mismatches, and you'll have cut wasted effort (and cost) without losing any actual capability.
+- Status: proposed
+- Based on: [Ledger: claude-fable-mythos-5-2](../knowledge/ledger.md#2026-11-09-claude-fable-mythos-5-2) (2026-11-09); [Playbook: model-selection-ladder](../knowledge/playbook.md#model-selection-ladder)
+- Objective: Produce a durable checklist habit — reviewing model-tier assignment whenever a new agent/subagent is added or a new model generation ships — rather than a one-time fix for today's setup.
+- Why now: Anthropic just made the escalate/default/step-down ladder explicit guidance (mid-tier default, top-tier only for the hardest open-ended work, small/fast tier for simple high-volume work), and this workspace already runs multiple subagent types (research, build, evaluate) whose model assignment has never been audited against any explicit rule.
+- Prerequisites: Access to this workspace's own agent/subagent configs (this `ai-expert.md` file's `model:` field and any subagent definitions you've built elsewhere); no new tools needed.
+- Deliverable: A short Markdown table listing every agent/subagent you currently run, its assigned model tier, the task difficulty it actually handles, and a verdict (correctly tiered / over-tiered / under-tiered) with one line of reasoning each.
+- Estimate: 30–60 min
+- Steps: (1) List every agent/subagent definition you control; (2) for each, note its current model assignment and a realistic description of the hardest task it's actually asked to do; (3) apply the ladder — does the task difficulty justify the current tier?; (4) flag mismatches; (5) fix the ones that are clearly over-tiered (cheap, safe) and leave under-tiered ones for a deliberate decision rather than an automatic bump.
+- Acceptance tests: Every currently-running agent/subagent appears in the table; at least one verdict is justified with a concrete task example, not just a guess; no model assignment is changed without the table entry that justifies it.
+- Reflection: Did you find any subagent quietly running on the top-tier model purely because it was the newest, with no task that actually needed it? Does this workspace's own model assignment (per `ai-expert.md`'s `model: inherit`) need a more explicit rule, or is "inherit" already the right default here?
+- Optional extension: Turn the table into a recurring check — e.g., a line item in `references/evaluation.md`'s regression routine — so it gets re-run automatically the next time a new model generation ships, rather than only when AIExpert happens to notice.
+
