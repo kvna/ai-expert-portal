@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Prove a guardrail hook actually fails closed
+
+- Explain it like I'm 10: You just learned there's now a setting that keeps a security guard's door shut if the guard can't do their job, instead of letting people walk through by default. This exercise is: build a tiny fake "guard," make it crash on purpose, and check with your own eyes that the door really does stay shut — don't just trust the setting exists.
+- Status: proposed
+- Based on: [Ledger: agent-sdk-hook-onfailure-block](../knowledge/ledger.md#agent-sdk-hook-onfailure-block) (Claude Agent SDK `onFailure: "block"`, 2026-11-03); [Playbook: instructions-are-not-controls](../knowledge/playbook.md#instructions-are-not-controls)
+- Objective: Verify, by direct observation rather than by reading the changelog line, that an Agent SDK hook set to `onFailure: "block"` actually prevents the gated action when the hook callback itself throws — and that *without* the setting, the action proceeds anyway (fail-open).
+- Why now: This is the newest, cheapest, most concrete instance of the workspace's own "instructions are not controls" principle, and it's a one-sitting test, not a research task — a good small compounding asset (a reusable fail-open/fail-closed test harness) rather than a one-off read.
+- Prerequisites: Claude Agent SDK (TypeScript or Python) installed; basic familiarity with PreToolUse/PostToolUse hooks.
+- Deliverable: A minimal SDK host script with one hook callback that deliberately throws, run twice — once with `onFailure: "block"` set, once without — plus a one-paragraph note recording what actually happened each time (did the gated tool call run or not).
+- Estimate: 30–60 min
+- Steps: (1) Write a trivial agent host with one tool and one `PreToolUse` hook whose callback always throws; (2) run it with no `onFailure` set and record whether the tool call still executes; (3) add `onFailure: "block"` and re-run, recording whether it's now blocked; (4) note the exact SDK version tested against, since this is a very recent (2026-11-03) addition.
+- Acceptance tests: Both runs are actually executed (not just reasoned about); the before/after behavior difference is observed directly, not assumed from the changelog text.
+- Reflection: Does this change how much you'd trust a hook-based guardrail you didn't write yourself? Are there other places in your own agent setups where a failure inside the enforcement mechanism itself might currently fail open without you knowing?
+- Optional extension: Check whether any guardrail-intent hooks already in this workspace's own `.claude/` configuration, or in any agent setup you maintain at work, currently omit `onFailure: "block"` and should set it.
+
