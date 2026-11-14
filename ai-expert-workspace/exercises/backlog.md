@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Audit an MCP server/client config against the 2026-07-28 deprecation list
+
+- Explain it like I'm 10: MCP is the standard plug that lets an AI assistant talk to outside tools, and the plug just got redesigned with a one-year countdown sticker on a few older parts. This exercise is going through one real MCP setup you actually use and checking, part by part, whether it's leaning on any of the parts with a countdown sticker on them — like checking an old appliance against a recall notice instead of waiting for it to stop working.
+- Status: proposed
+- Based on: [Ledger: mcp-spec-stateless-and-deprecations](../knowledge/ledger.md#2026-07-28-mcp-spec-stateless-and-deprecations--mcps-biggest-spec-revision-yet-drops-the-session-handshake-deprecates-rootssamplinglogging-and-httpsse-with-a-12-month-removal-clock-now-running); [playbook: mcp-2026-07-28-deprecation-audit](../knowledge/playbook.md#mcp-2026-07-28-deprecation-audit--audit-every-mcp-serverclient-you-maintain-against-the-2026-07-28-specs-deprecation-list-the-clock-on-removal-is-already-running)
+- Objective: Turn the abstract spec-deprecation list into a concrete pass/fail check against one real MCP server or client config you actually use (e.g., one of the `mcp__*` tool integrations active in this session), so the next MCP integration gets checked by habit rather than by memory.
+- Why now: the 12-month deprecation clock on `initialize`/session-stickiness, Roots/Sampling/Logging, HTTP+SSE transport, and Dynamic Client Registration started 2026-07-28 — checking now costs an hour; checking after something breaks near the deadline costs much more.
+- Prerequisites: Access to at least one MCP server/client config (this session's own `.mcp.json`/tool config is sufficient); the official spec changelog open for reference.
+- Deliverable: A short Markdown checklist (one row per deprecated feature) marking each as "not used," "used — migration needed," or "unknown — needs vendor confirmation," for one real MCP integration, plus one sentence per "used" row on what the fix looks like.
+- Estimate: 30–60 min
+- Steps: (1) Pick one MCP server/client integration you actually use; (2) read its config/docs for session handling, auth flow, and transport; (3) check each against the four deprecated-feature categories in the playbook entry; (4) for anything unclear, check the server's own changelog or ask the maintainer rather than guessing; (5) write the checklist and one-line fixes.
+- Acceptance tests: Every deprecated-feature category has an explicit mark (not left blank); at least one row cites a specific config line, doc excerpt, or changelog entry as evidence, not just an assumption.
+- Reflection: Did the audit find anything actually at risk, or confirm the integration is already clean? Either way, would you have known that without checking?
+- Optional extension: If you maintain or could configure an MCP server yourself (vs. only consuming one), confirm which spec version it declares and whether its SDK has adopted `2026-07-28` yet.
+
