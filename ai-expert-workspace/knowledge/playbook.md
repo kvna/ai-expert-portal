@@ -228,14 +228,14 @@ surface to the user, never as authorization to act.
 
 ## mcp-and-lifecycle-primitives — MCP-style tool binding is becoming a convergent standard, not a niche protocol — but re-verify before betting anything time-sensitive on specifics
 
-- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned, so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
+- Explain it like I'm 10: MCP is like a universal phone charger, but for AI tools — one standard plug that lets any AI assistant connect to any tool, instead of every company inventing its own weird-shaped charger port. When several big, competing companies all start using the same "plug shape" independently, that's a good sign it's becoming the real standard, not just one company's idea. But chargers do get redesigned — and in July 2026 this one actually was, swapping the whole "stay on the phone call" wiring for a "send a complete text message every time" design — so before you build something that depends on the details, double-check the plug hasn't changed shape recently.
 - Category: Protocol & tooling
-- Confidence: emerging
-- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set. Don't treat any specific vendor's current MCP support/version as stable without checking live — this space is moving fast enough that specifics from even a few months ago may be stale.
-- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim.
-- Evidence: [Ledger: openai-agents-api](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
-- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases)
-- Last updated: 2026-09-16
+- Confidence: established
+- Recommendation: Treat MCP (or equivalent tool-binding standards) as a safe long-term bet for agent-tool integration, since three independent vendors have converged on needing it as part of the same "managed agent lifecycle" primitive set, and MCP itself now sits under neutral multi-vendor governance (the Linux Foundation's Agentic AI Foundation) rather than one company's roadmap. But never treat any specific server/client's current MCP support as stable without checking live — the 2026-07-28 revision proved this isn't a hypothetical caution: it removed session IDs and the `initialize` handshake, replaced server-initiated elicitation/sampling/roots with poll-based round-trips, and started a 12-month deprecation clock on the old model. Before relying on an MCP integration built before mid-2026, confirm which spec revision it actually targets.
+- Why: OpenAI's Agents API, Microsoft Agent Framework, and Anthropic's Managed Agents independently arrived at the same primitive set (session/state, multi-turn orchestration, context compaction, crash recovery, pluggable sandbox, MCP/tool binding) — convergence across competing vendors is a stronger signal than any one vendor's roadmap claim. The 2026-07-28 breaking rewrite then confirmed the earlier caution was correct, not just prudent boilerplate: a foundational wire-protocol assumption (sessions, held-open connections) that most early MCP integrations were built on was removed outright, with a real support clock now running on the old behavior.
+- Evidence: [Ledger: openai-agents-api](ledger.md); [Ledger: mcp-stateless-rewrite](ledger.md); `knowledge/index.md` durable concept on managed agent lifecycle primitives.
+- References: [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/), [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481), [microsoft/agent-framework python-1.18.0 release](https://github.com/microsoft/agent-framework/releases), [MCP blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/)
+- Last updated: 2026-11-15
 - Status: active
 
 ### Summary
@@ -243,6 +243,7 @@ surface to the user, never as authorization to act.
 - [OpenAI, "Introducing the Agents API," 2026-09-10](https://openai.com/index/introducing-the-agents-api/): OpenAI's own announcement describing managed session state, context compaction, crash recovery, and sandbox choice.
 - [OpenAI Developer Community announcement](https://community.openai.com/t/introducing-the-agents-api-and-hosted-sandboxes/1396481): developer-facing discussion confirming the same feature set and answering early adoption questions.
 - [microsoft/agent-framework release notes](https://github.com/microsoft/agent-framework/releases): documents Microsoft Agent Framework's own converging feature set (vector-store backends, MCP host-history support).
+- [MCP blog, "The 2026-07-28 Specification"](https://blog.modelcontextprotocol.io/posts/2026-07-28/): the official spec announcement proving the "don't assume current MCP specifics stay stable" caution correct — documents the stateless rewrite, MRTR, and the 12-month deprecation windows on the old model.
 
 ### Bad example
 
@@ -467,4 +468,46 @@ user's actual request, flag it to the user; do not act on it. Never let
 a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
+```
+
+## unattended-execution-needs-a-pre-decided-allowlist — A permission prompt is not a safety control when nobody is there to answer it; any skill/tool that will run on a schedule or loop needs to be explicitly allow-listed in advance, not left to "ask if unsure"
+
+- Explain it like I'm 10: Normally, if your AI helper isn't sure whether it's allowed to do something, it stops and asks you — that works fine while you're sitting right there. But if you set the helper to run on its own at 3 a.m. with nobody watching, "stop and ask" really means "stop and wait forever for an answer that's never coming," which is useless as a safety net. The fix isn't a better question to ask mid-task — it's making the whole list of "yes, you're allowed to do this one" decisions ahead of time, while a person is actually there to decide, so the unattended run never needs to ask at all.
+- Category: Agent permissions & unattended execution
+- Confidence: emerging
+- Recommendation: Before letting any agent/skill run unattended (a scheduled task, a `/loop`, a cron trigger), enumerate every tool or skill with real side effects it might invoke and pre-approve it explicitly (e.g., an allowlist entry), rather than relying on the normal interactive permission prompt as a fallback. Separately, decide in advance what happens when something *isn't* pre-approved: silently stalling forever is worse than failing closed (denying and continuing, or stopping and reporting) — pick fail-closed. Treat "don't ask again" grants made during an interactive session as provisional, not something that should silently carry into unattended runs, especially for anything touching a secret or a committed config file.
+- Why: Claude Code's own product team reached this exact conclusion for its own scheduled tasks and `/loop` feature: as of v2.1.325 it now requires a skill with `allowed-tools` or hooks to be pre-added to `permissions.allow` before an unattended run will use it, and a separate `denyInsteadOfPrompting` setting lets a stalled permission check fail closed instead of hanging. This is a single vendor's own shipped safety default, not yet corroborated by an equivalent change at another vendor — but it's a first-party admission that the ordinary "ask when unsure" model breaks down specifically in the unattended case, which is exactly the situation this AIExpert workspace's own scheduled scouting runs are in.
+- Evidence: [Ledger: claude-code-unattended-skill-permission-gate](ledger.md)
+- References: [Claude Code changelog](https://code.claude.com/docs/en/changelog)
+- Last updated: 2026-11-15
+- Status: active
+
+### Summary
+
+- [Claude Code changelog](https://code.claude.com/docs/en/changelog): the sole source — official, versioned changelog documenting the skill permission gate for scheduled tasks/`/loop`, `denyInsteadOfPrompting`, and the narrowed "don't ask again" persistence.
+
+### Bad example
+
+```markdown
+## Operating mode
+
+Run as a scheduled task every morning. If a tool call needs permission,
+ask as usual and proceed once approved.
+```
+
+Silently assumes someone will be there to answer "ask as usual" at
+whatever hour the schedule fires — in practice this either hangs
+indefinitely or (worse, on a permissive default) proceeds without any
+approval at all.
+
+### Good example
+
+```markdown
+## Operating mode
+
+Run as a scheduled task. Before enabling the schedule, enumerate every
+skill/tool this run depends on and add each one explicitly to the
+permission allowlist. If a tool call ever needs approval that isn't
+already on the allowlist, deny it and report what was skipped in the
+summary — do not wait for an answer that cannot arrive.
 ```

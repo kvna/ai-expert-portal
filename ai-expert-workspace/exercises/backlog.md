@@ -48,3 +48,33 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Migrate a sample MCP server to the stateless 2026-07-28 spec
+
+- Explain it like I'm 10: Your old tool used to work like a phone call — connect once, stay on the line, both sides remember who's talking. The new rulebook wants it to work like texting — every message has to stand alone and say everything needed. This exercise means actually taking a small tool you built the "phone call" way and rewiring it to work the "texting" way, so you understand the change by doing it instead of just reading about it.
+- Status: proposed
+- Based on: [Ledger: mcp-stateless-rewrite](../knowledge/ledger.md#2026-07-28-mcp-stateless-rewrite) (MCP 2026-07-28 spec, added 2026-11-15)
+- Objective: Understand concretely what breaks and what has to change when an MCP server moves from session-based (`initialize`, `Mcp-Session-Id`, server-initiated elicitation/sampling/roots) to the stateless, MRTR-based 2026-07-28 model — and produce a reusable migration checklist, not a one-off fix.
+- Why now: This is a real, already-shipped breaking change with a running 12-month deprecation clock on the old behavior (Roots/Sampling/Logging, HTTP+SSE) — any MCP server built or adopted before mid-2026 needs this check, and a checklist built once here is reusable for every other server in the same position.
+- Prerequisites: A small MCP server you control (or a simple sample server) built against a pre-2026-07-28 SDK; the target-language SDK updated to a version supporting 2026-07-28 (TypeScript, Python, Go, or C# are Tier 1).
+- Deliverable: A migrated sample server plus a Markdown migration checklist (the durable asset) covering: removing reliance on `initialize`/session IDs, converting any server-initiated elicitation/sampling/roots call to MRTR's `resultType: "input_required"` pattern, adding `_meta` fields, and adding RFC 9207 `iss` validation if the server does auth.
+- Estimate: half day
+- Steps: (1) Read the official 2026-07-28 announcement and changelog; (2) identify every place the sample server depends on session state or a server-initiated request; (3) rewrite each using the new patterns; (4) run the updated SDK's test/validation tooling against it; (5) write the checklist generalizing what you just did.
+- Acceptance tests: The migrated server passes the updated SDK's own conformance/test tooling; the checklist is generic enough to hand to a different MCP server without rewriting it.
+- Reflection: Which of the deprecated-but-still-working features (Roots, Sampling, Logging, HTTP+SSE) does this server actually use — and is there a real plan to retire them inside the 12-month window, or will "it still works" quietly become "nobody checked"?
+- Optional extension: Point the migrated server at an Azure-hosted gateway and use the new `Mcp-Method`/`Mcp-Name` headers to add request-level routing or rate-limiting, directly reusable for any future IaC-exposed MCP tool.
+
+## EX-005 — Audit AIExpert's own scheduled-run permission config against `permissions.allow` / `denyInsteadOfPrompting`
+
+- Explain it like I'm 10: This scheduled AIExpert run has nobody sitting there to answer "is this okay?" if it ever gets asked. This exercise is just checking, in advance, that every tool AIExpert actually needs for its scheduled runs is already on the pre-approved list — so it never ends up stuck waiting for a question nobody can answer, or silently skipping something it needed.
+- Status: proposed
+- Based on: [Ledger: claude-code-unattended-skill-permission-gate](../knowledge/ledger.md#2026-11-claude-code-unattended-skill-permission-gate) (added 2026-11-15); [Playbook: unattended-execution-needs-a-pre-decided-allowlist](../knowledge/playbook.md)
+- Objective: Confirm this workspace's own scheduled AIExpert runs won't silently stall or silently get denied mid-task because a skill or tool it depends on wasn't pre-approved for unattended execution.
+- Why now: This is directly operational, not hypothetical — this very scouting run is a scheduled, unattended process of the kind the new Claude Code permission gate targets.
+- Prerequisites: Access to this repository's Claude Code / scheduled-task permission configuration.
+- Deliverable: A short written audit (Markdown) listing every tool/skill the scheduled AIExpert run invokes, whether each is covered by `permissions.allow` or an equivalent pre-approval, and whether `denyInsteadOfPrompting` (or an equivalent fail-closed setting) is enabled for this run.
+- Estimate: 30–60 min
+- Steps: (1) List every tool call type this scheduled run has actually made across recent sessions (Bash, Edit, Write, WebSearch, WebFetch, gh/git operations); (2) check each against the current permission configuration; (3) note any gap where a needed tool isn't pre-approved; (4) recommend the fail-closed setting if not already set.
+- Acceptance tests: The audit names every tool class actually used by this scheduled run and states explicitly, for each, approved or gap.
+- Reflection: If one of these tool calls had instead hit an un-approved permission prompt mid-run, what would have actually happened — a silent hang, a silent skip, or a clear failure the user would see?
+- Optional extension: Compare this same "pre-approved allowlist for unattended runs" pattern against how an Azure Automation Account or Terraform Cloud run (service principal scope, no interactive approval) handles the same problem — the underlying discipline (decide access while a human can review it, not at execution time) is the same one this user already applies in IaC/governance work.
+
