@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Wrap AIExpert's own skill as an Agent Plugins-conformant package
+
+- Explain it like I'm 10: AIExpert's recipe card (its skill file) is already written in the shared recipe format everyone agreed on. This exercise checks whether it also fits in the shared shipping box format a separate group of companies agreed on — so it's not just a good recipe, it's also mailable to more houses without repacking.
+- Status: proposed
+- Based on: [Ledger: agent-plugins-1.0-spec](../knowledge/ledger.md#2026-08-agent-plugins-10-spec--a-five-vendor-coalition-minus-anthropic-ships-a-competingcomplementary-packaging-standard-for-skills--mcp-servers) (Agent Plugins 1.0 spec, published ~2026-08, logged 2026-11-16); playbook: track-packaging-layer-separately-from-skill-format
+- Objective: Learn the practical difference between "conforms to the Agent Skills content spec" and "conforms to the Agent Plugins packaging spec," by actually wrapping one real skill both ways, rather than reasoning about it abstractly.
+- Why now: Agent Plugins has real multi-vendor backing (Amazon, Cursor, Microsoft, OpenAI, Vercel) and independent confirmation it's in active engineering use (Thoughtworks Technology Radar, Nov 2026), but this workspace's own dual-platform skill files have only ever been checked against the Agent Skills spec, never the separate packaging one.
+- Prerequisites: This workspace's existing `.agents/skills/ai-expert/SKILL.md`; the reference example at github.com/agentplugins/agent-plugins-example; a text editor (no special tooling required for a manual check).
+- Deliverable: A `plugin.json` manifest wrapping AIExpert's Codex skill per the Agent Plugins 1.0.0 spec, plus a short Markdown note on what did and didn't map cleanly (e.g. anything the skill relies on that the packaging spec doesn't cover, like `allowed-tools`).
+- Estimate: 30–60 min
+- Steps: (1) Read the Agent Plugins 1.0.0 spec and the reference example repo; (2) write a `plugin.json` for AIExpert's existing Codex `SKILL.md` without changing the skill content itself; (3) note any field or behavior the skill depends on that the plugin manifest doesn't represent; (4) record whether this changes any recommendation in the `agent-skills-open-standard-conformance` or new `track-packaging-layer-separately-from-skill-format` playbook entries.
+- Acceptance tests: A `plugin.json` exists that validates against the spec's schema (manual check against the documented required fields is acceptable if the reference validator isn't available); the note names at least one concrete gap or confirms there is none, with reasoning.
+- Reflection: Did treating "spec-conformant content" and "spec-conformant packaging" as two separate checks actually surface anything the single-spec check would have missed?
+- Optional extension: Repeat for the Claude-side agent definition (`.claude/agents/ai-expert.md`) and compare whether the two platforms' skill files need different packaging treatment.
+
