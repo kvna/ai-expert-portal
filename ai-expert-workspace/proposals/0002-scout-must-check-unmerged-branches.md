@@ -1,0 +1,31 @@
+# AIExpert improvement proposal: Scout runs must check unmerged PR branches, not just master, before logging a "new" finding
+
+- Explain it like I'm 10: Imagine 30 different kids each keep a diary of "what's new today," but every morning they only check yesterday's diary from two months ago, not each other's. Each kid ends up writing down the same news as if they discovered it first, because nobody looked at what the others already wrote. This proposal says: before writing something down as new, check everyone else's recent diary pages too, not just the old shared one.
+- Date: 2026-11-25
+- Status: proposed
+- Triggering evidence: As of 2026-11-25, `ai-expert-workspace/knowledge/ledger.md` and `playbook.md` on `master` have not been updated since 2026-09-16/17 (see `git log`), yet 30 scheduled Scout runs since then (PRs #40–#69, branches `scout/2026-10-26` through `scout/2026-11-24`) each independently branched from that same stale `master` and opened their own PR — none merged. Because each branch only ever diffs against the stale `master`, the "check for an existing entry and update it rather than duplicating it" step in the Cumulative knowledge workflow had nothing current to check against, and duplication resulted. Confirmed concretely: PR #55 (`scout/2026-11-10`) added a ledger entry `agent-skills-joins-aaif` for Anthropic's 2026-10-22 donation of Agent Skills governance to the Agentic AI Foundation; PR #65 (`scout/2026-11-20`), ten days later, independently added a *second*, differently-slugged entry `agent-skills-aaif-governance` for the *same* 2026-10-22 event — both still open and unmerged, so the duplication has not yet surfaced to a human reviewer. A fresh research check on 2026-11-25 (fork of this session) confirmed the AAIF donation (2026-10-22, anthropic.com primary source) and the MCP stateless spec (2026-07-28, modelcontextprotocol.io primary source) are each a single historical event, not an ongoing stream — the repeated appearance of these two topics across many of the 30 PR titles is re-discovery of old news via secondary-source republication, not genuine new developments.
+- Current limitation: The workflow's anti-duplication check (`Cumulative knowledge workflow`, step 1: "Check for an existing entry and update it rather than duplicating it") is defined against the current state of the knowledge files, but the Publishing Policy for unattended runs forbids committing to `master` directly, so an unattended run's "current state" is whatever `master` has — which can go stale indefinitely if nobody merges the resulting PRs. There is no step telling an unattended run to look at *other open scout branches* before concluding a topic is unlogged. Over 30 days this produced at least one confirmed duplicate pair and a strong likelihood of more (several other recurring PR-title topics — sandbox-escape incidents, MCP spec changes, model-family releases — were not individually re-verified this pass but show the same branch-title pattern).
+- Proposed change: Before logging a candidate finding as new, an unattended Scout run should additionally: (1) list open PRs/branches matching `scout/*` via the GitHub tool already available to it; (2) for any candidate topic, check the ledger/playbook content of the most recent 3–5 such branches (not only `master`) for an existing entry before writing a new one, same substantive check as step 1 of the Cumulative knowledge workflow, just against a wider base; (3) if a matching topic is already logged in an unmerged branch, treat it as already covered — skip it, or if there is a genuinely new fact to add, note in the PR body that it should be reconciled with the specific existing PR by number. Separately (an operational, non-agent-file recommendation): if the open `scout/*` PR count exceeds a threshold (e.g. 7, roughly a week of dailies), the run should say so plainly in its summary/notification so a human knows review is falling behind, rather than silently adding PR #31-in-a-row to the pile.
+- Expected benefit: Eliminates duplicate research/compute spend and duplicate ledger entries across the backlog; makes the eventual human merge pass tractable instead of needing to manually de-duplicate 30+ overlapping PRs; surfaces review-backlog buildup early instead of letting it run indefinitely.
+- Risks and possible regressions: Slightly more GitHub API calls per run (already has `list_pull_requests`/branch read access, no new permissions needed). Risk of false "already covered" skips if a branch title is similar but the underlying fact has materially changed (e.g. a governance process genuinely advancing stage by stage) — mitigate by comparing the actual ledger entry body/date, not just the PR title, before skipping.
+- Permission/tool implications: None — uses GitHub read access and `Bash`/`git` access AIExpert already has in this environment. No new tools or permissions requested.
+- Rollback: Drop the added branch-comparison step; revert to comparing against `master` only. Single, isolated step, no dependency on other changes.
+- Validation plan: On the next Scout run, confirm it enumerates open `scout/*` PRs, and for a topic known to already exist in an unmerged branch (e.g. re-run against the AAIF/MCP topics above), confirm it reports "already covered in PR #N" instead of opening a duplicate PR.
+- Files affected: `.claude/agents/ai-expert.md` (Cumulative knowledge workflow section) — proposal only, not applied. No other files.
+
+## Proposed patch
+
+```diff
+# Sketch only — not applied. Would add to "Cumulative knowledge workflow" in
+# .claude/agents/ai-expert.md, after step 1:
+
+  1. Check for an existing entry and update it rather than duplicating it.
++ 1a. In an unattended run where prior scout PRs may be unmerged, also check
++     open `scout/*` branches (not just the default branch) for the same
++     topic before logging it as new; if found, treat as already covered
++     rather than opening a duplicate entry/PR.
+```
+
+## Decision
+
+Awaiting explicit user approval — no change applied to `.claude/agents/ai-expert.md`. The human action this proposal most directly calls for, independent of whether the agent-file change is approved, is triaging/merging (or closing/consolidating) the existing 30-PR backlog (#40–#69) so the ledger and playbook reflect reality again.
