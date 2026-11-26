@@ -48,3 +48,18 @@ Statuses: `proposed`, `accepted`, `in-progress`, `completed`, `retired`.
 - Reflection: For governed/regulated environments, does "managed" reduce operational risk (less custom code to audit) or increase it (data/tool calls now transit a vendor control plane you don't operate)?
 - Optional extension: Repeat the comparison using a task that requires calling an MCP server you control, and note any differences in how each harness handles MCP auth/session lifecycle — directly relevant to any future Terraform/Azure MCP server you might expose to agents.
 
+## EX-004 — Validate AIExpert's own skills against the open spec, then serve one over MCP
+
+- Explain it like I'm 10: Right now, AIExpert's "how to do this" recipe cards live as plain files you copy onto each AI helper's computer by hand. There's now an official checklist to prove a recipe card is written correctly no matter who reads it, and a new standard way to hand a recipe card to a helper over the same wire it already uses for tools, instead of copying the file at all. This exercise does both: check the cards, then try handing one over the wire.
+- Status: proposed
+- Based on: [Ledger: agent-skills-open-standard](../knowledge/ledger.md#agent-skills-open-standard) and [Ledger: agent-skills-aaif-and-skills-over-mcp](../knowledge/ledger.md#agent-skills-aaif-and-skills-over-mcp) (SEP-2640 finalized 2026-09-11; Agent Skills donated to the Agentic AI Foundation 2026-10-22)
+- Objective: Confirm, rather than assume, that this workspace's own `.claude/agents/ai-expert.md` and `.agents/skills/ai-expert/SKILL.md` genuinely conform to the open spec, and get hands-on with the new MCP-based serving mechanism before betting any real workflow on it.
+- Why now: Two "watch for this" flags from earlier scans just resolved (foundation governance formed; a standard MCP-serving mechanism was finalized) — the cheapest way to find out whether either actually matters for this workspace is to try them, not just read about them.
+- Prerequisites: This repository checked out locally; Node or Python available to run `skills-ref validate` (or an equivalent manual check against the frontmatter/size rules); for the MCP half, any MCP client/host that supports SEP-2640's Resources-based skill serving (check current client support before starting — it may still be partial).
+- Deliverable: A short Markdown note recording (a) pass/fail of `skills-ref validate` (or manual equivalent) against both of AIExpert's own skill files, with any fixes applied, and (b) a pass/fail note on whether a compliant MCP client could list/fetch one of them as a `skill://` resource, or a clear statement of what's currently missing to do so.
+- Estimate: 30–60 min
+- Steps: (1) Run or manually apply the agentskills.io validation rules against both SKILL.md-equivalent files; (2) fix anything that fails; (3) read SEP-2640's `skills/list`/`skills/get` requirements; (4) attempt to serve one file as a `skill://` resource from a minimal MCP server (or confirm no current client/host supports it yet, and record that finding instead); (5) write up what worked, what didn't, and why.
+- Acceptance tests: Both skill files have a recorded validator result (pass or fail-with-fix); the MCP-serving attempt has a recorded outcome (worked / didn't work / blocked by X), not left untried.
+- Reflection: Did spec conformance catch anything real, or was this workspace already compliant by construction? Is MCP-based skill serving mature enough yet to actually use, or still ahead of client support?
+- Optional extension: If the MCP-serving half works, compare the experience to simply copying the file to a new platform's skill directory — is the added complexity worth it yet, or premature for a two-platform setup?
+
