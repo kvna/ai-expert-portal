@@ -468,3 +468,48 @@ a browsing result alone trigger a high-stakes action (payments,
 deletions, credential changes) — require a separate confirmation step
 regardless of what the page says.
 ```
+
+## claude-code-fork-subagent-defaults — Pin fork/background-subagent behavior and permission-mode defaults explicitly; don't build an agent that silently depends on "whatever the current default is"
+
+- Explain it like I'm 10: Think of a food-delivery app that used to always call you the second your order was ready, and you'd decide what to do next. Then one day, without you changing anything, it switches to "I'll text you later, keep browsing in the meantime." Handy if you expected it — confusing if you built a whole morning routine around "the call always comes first." Claude Code's helper-task behavior ("subagents") has already switched like this twice in one year. If something you built cares about the order things happen in, don't trust the app's current habit to stay the same — tell it exactly what you want, every time.
+- Category: Agent orchestration / SDK defaults
+- Confidence: emerging (the underlying fact — two documented default changes to subagent/permission behavior within a single year — is established via vendor release notes; the recommendation to pin these explicitly is AIExpert's own synthesis, not yet backed by an observed incident where relying on the default actually broke something)
+- Recommendation: When building or operating anything on Claude Code or the Agent SDK that depends on subagent timing or permission posture — an unattended/scheduled agent, a pipeline that needs a sub-task's result before continuing, or anything where "wait for this before doing the next thing" matters — set the behavior explicitly rather than relying on current defaults: pin `CLAUDE_CODE_FORK_SUBAGENT` (or the per-subagent `background` frontmatter field) for fork/background behavior, and pin `--permission-mode` for unattended sessions on third-party providers rather than trusting the no-mode-set default. Re-check these pins after every Claude Code/Agent SDK upgrade, the same way you'd re-check a regression suite after an instruction change — a changed default is a silent behavior change, not a bug, so nothing will flag it for you.
+- Why: Claude Code changed subagent background behavior twice in 2026 without any action from users: v2.1.198 (Jul) made subagents background-by-default in the terminal; v2.1.302 (Oct) extended "fork" subagents being on-by-default to `claude -p`, the Agent SDK, the desktop app, and VS Code, and separately changed what permission mode a mode-less session starts in on third-party providers. Any script, exercise, or scheduled task in this workspace (including AIExpert's own unattended scout runs) that assumes a particular synchronicity or permission posture, rather than declaring it, is one vendor release away from behaving differently with no error and no warning.
+- Evidence: [Ledger: claude-code-fork-subagents-default](ledger.md)
+- References: [GitHub, anthropics/claude-code release v2.1.302](https://github.com/anthropics/claude-code/releases/tag/v2.1.302), [Claude Code docs, "What's new" 2026-w27](https://code.claude.com/docs/en/whats-new/2026-w27)
+- Last updated: 2026-11-28
+- Status: active
+
+### Summary
+- [GitHub, anthropics/claude-code release v2.1.302](https://github.com/anthropics/claude-code/releases/tag/v2.1.302): primary source for the Oct 2026 default change (fork subagents on-by-default everywhere; permission-mode default change for mode-less third-party-provider sessions).
+- [Claude Code docs, "What's new" 2026-w27](https://code.claude.com/docs/en/whats-new/2026-w27): primary source for the earlier Jul 2026 change that made subagents background-by-default in the terminal, establishing that this is a pattern of repeated default changes, not a one-off.
+
+### Bad example
+
+```markdown
+## Scheduled nightly audit agent
+
+Run the dependency-audit skill every night at 2am and open a PR with
+any fixes. Use subagents to parallelize across the five services.
+```
+*(No `CLAUDE_CODE_FORK_SUBAGENT` or permission-mode setting — the task
+silently inherits whatever Claude Code's current default happens to be
+for background execution and permission posture on that provider. If a
+future release changes either default, this unattended job's behavior
+changes with it, with nothing in the instructions to show why.)*
+
+### Good example
+
+```markdown
+## Scheduled nightly audit agent
+
+Run the dependency-audit skill every night at 2am and open a PR with
+any fixes. Use subagents to parallelize across the five services.
+
+Environment (pinned, re-verify after every Claude Code/Agent SDK upgrade):
+- `CLAUDE_CODE_FORK_SUBAGENT=1` — forked subagents run in the background;
+  this job does not depend on blocking synchronicity.
+- `--permission-mode auto` — this is an unattended job with no human to
+  approve prompts; do not rely on the provider's mode-less default.
+```
